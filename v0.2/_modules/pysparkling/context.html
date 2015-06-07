@@ -1,0 +1,418 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pysparkling.context &mdash; pysparkling 0.2.20 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pysparkling 0.2.20 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../index.html" class="icon icon-home"> pysparkling
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#rdd">RDD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#context">Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#fileio">fileio</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">pysparkling</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>pysparkling.context</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for pysparkling.context</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Context.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">.rdd</span> <span class="kn">import</span> <span class="n">RDD</span>
+<span class="kn">from</span> <span class="nn">.broadcast</span> <span class="kn">import</span> <span class="n">Broadcast</span>
+<span class="kn">from</span> <span class="nn">.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
+<span class="kn">from</span> <span class="nn">.task_context</span> <span class="kn">import</span> <span class="n">TaskContext</span>
+<span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">File</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">PYSPARKLING_VERSION</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">unit_fn</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Used as dummy serializer and deserializer.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">arg</span>
+
+
+<span class="k">def</span> <span class="nf">runJob_map</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">deserializer</span><span class="p">,</span> <span class="n">data_serializer</span><span class="p">,</span> <span class="n">data_deserializer</span><span class="p">,</span>
+     <span class="n">serialized</span><span class="p">,</span> <span class="n">serialized_data</span><span class="p">)</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">func</span><span class="p">,</span> <span class="n">rdd</span> <span class="o">=</span> <span class="n">deserializer</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
+    <span class="n">partition</span> <span class="o">=</span> <span class="n">data_deserializer</span><span class="p">(</span><span class="n">serialized_data</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Worker function {0} is about to get executed with {1}&#39;</span>
+              <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">partition</span><span class="p">))</span>
+
+    <span class="n">task_context</span> <span class="o">=</span> <span class="n">TaskContext</span><span class="p">(</span><span class="n">stage_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">partition_id</span><span class="o">=</span><span class="n">partition</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data_serializer</span><span class="p">(</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">task_context</span><span class="p">,</span> <span class="n">rdd</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">task_context</span><span class="p">))</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../api.html#pysparkling.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param pool:</span>
+<span class="sd">        An instance with a ``map(func, iterable)`` method.</span>
+
+<span class="sd">    :param serializer:</span>
+<span class="sd">        Serializer for functions. Examples are ``pickle.dumps`` and</span>
+<span class="sd">        ``dill.dumps``.</span>
+
+<span class="sd">    :param deserializer:</span>
+<span class="sd">        Deserializer for functions. Examples are ``pickle.loads`` and</span>
+<span class="sd">        ``dill.loads``.</span>
+
+<span class="sd">    :param data_serializer:</span>
+<span class="sd">        Serializer for the data.</span>
+
+<span class="sd">    :param data_deserializer:</span>
+<span class="sd">        Deserializer for the data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">serializer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">deserializer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">data_serializer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">data_deserializer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">DummyPool</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">serializer</span><span class="p">:</span>
+            <span class="n">serializer</span> <span class="o">=</span> <span class="n">unit_fn</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">deserializer</span><span class="p">:</span>
+            <span class="n">deserializer</span> <span class="o">=</span> <span class="n">unit_fn</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_serializer</span><span class="p">:</span>
+            <span class="n">data_serializer</span> <span class="o">=</span> <span class="n">unit_fn</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_deserializer</span><span class="p">:</span>
+            <span class="n">data_deserializer</span> <span class="o">=</span> <span class="n">unit_fn</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serializer</span> <span class="o">=</span> <span class="n">serializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deserializer</span> <span class="o">=</span> <span class="n">deserializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span> <span class="o">=</span> <span class="n">data_serializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span> <span class="o">=</span> <span class="n">data_deserializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s3_conn</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_rdd_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">PYSPARKLING_VERSION</span>
+
+    <span class="k">def</span> <span class="nf">broadcast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Broadcast</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">newRddId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_rdd_id</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_rdd_id</span>
+
+<div class="viewcode-block" id="Context.parallelize"><a class="viewcode-back" href="../../api.html#pysparkling.Context.parallelize">[docs]</a>    <span class="k">def</span> <span class="nf">parallelize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param x:</span>
+<span class="sd">            An iterable (e.g. a list) that represents the data.</span>
+
+<span class="sd">        :param numPartitions: (optional)</span>
+<span class="sd">            The number of partitions the data should be split into.</span>
+<span class="sd">            A partition is a unit of data that is processed at a time.</span>
+<span class="sd">            Can be ``None``.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            New RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">numPartitions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RDD</span><span class="p">([</span><span class="n">Partition</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">x_len_iter</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">tee</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">len_x</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">x_len_iter</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">partitioned</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPartitions</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">len_x</span><span class="o">/</span><span class="n">numPartitions</span><span class="p">)</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">len_x</span><span class="o">/</span><span class="n">numPartitions</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span> <span class="o">==</span> <span class="n">numPartitions</span><span class="p">:</span>
+                    <span class="n">end</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">yield</span> <span class="n">Partition</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">),</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">RDD</span><span class="p">(</span><span class="n">partitioned</span><span class="p">(),</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Context.runJob"><a class="viewcode-back" href="../../api.html#pysparkling.Context.runJob">[docs]</a>    <span class="k">def</span> <span class="nf">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdd</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">partitions</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">allowLocal</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+               <span class="n">resultHandler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function is used by methods in the RDD.</span>
+
+<span class="sd">        Note that the maps are only inside generators and the resultHandler</span>
+<span class="sd">        needs to take care of executing the ones that it needs. In other words,</span>
+<span class="sd">        if you need everything to be executed, the resultHandler needs to be</span>
+<span class="sd">        at least ``lambda x: list(x)`` to trigger execution of the generators.</span>
+
+<span class="sd">        :param func:</span>
+<span class="sd">            Map function. The signature is</span>
+<span class="sd">            func(TaskContext, Iterator over elements).</span>
+
+<span class="sd">        :param partitions: (optional)</span>
+<span class="sd">            List of partitions that are involved. Default is ``None``, meaning</span>
+<span class="sd">            the map job is applied to all partitions.</span>
+
+<span class="sd">        :param allowLocal: (optional)</span>
+<span class="sd">            Allows for local execution. Default is False.</span>
+
+<span class="sd">        :param resultHandler: (optional)</span>
+<span class="sd">            Process the result from the maps.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            Result of resultHandler.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">partitions</span><span class="p">:</span>
+            <span class="n">partitions</span> <span class="o">=</span> <span class="n">rdd</span><span class="o">.</span><span class="n">partitions</span><span class="p">()</span>
+
+        <span class="c"># TODO: this is the place to insert proper schedulers</span>
+        <span class="k">if</span> <span class="n">allowLocal</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">local_map</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+                <span class="n">task_context</span> <span class="o">=</span> <span class="n">TaskContext</span><span class="p">(</span>
+                    <span class="n">stage_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">partition_id</span><span class="o">=</span><span class="n">partition</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">task_context</span><span class="p">,</span> <span class="n">rdd</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">task_context</span><span class="p">))</span>
+            <span class="n">map_result</span> <span class="o">=</span> <span class="p">(</span><span class="n">local_map</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">partitions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">map_result</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">runJob_map</span><span class="p">,</span> <span class="p">[</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deserializer</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">_serializer</span><span class="p">((</span><span class="n">func</span><span class="p">,</span> <span class="n">rdd</span><span class="p">)),</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span><span class="p">(</span><span class="n">p</span><span class="p">),</span>
+                     <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">partitions</span>
+                <span class="p">])</span>
+            <span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Map jobs generated.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">resultHandler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">resultHandler</span><span class="p">(</span><span class="n">map_result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">map_result</span><span class="p">)</span>  <span class="c"># convert to list to execute on all partitions</span>
+</div>
+<div class="viewcode-block" id="Context.textFile"><a class="viewcode-back" href="../../api.html#pysparkling.Context.textFile">[docs]</a>    <span class="k">def</span> <span class="nf">textFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">minPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">use_unicode</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read a text file into an RDD.</span>
+
+<span class="sd">        :param filename:</span>
+<span class="sd">            Location of a file. Can include schemes like ``http://``,</span>
+<span class="sd">            ``s3://`` and ``file://``.</span>
+
+<span class="sd">        :param minPartitions: (optional)</span>
+<span class="sd">            By default, every file is a partition, but this option allows to</span>
+<span class="sd">            split these further.</span>
+
+<span class="sd">        :param use_unicode: (optional)</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            New RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resolved_names</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">resolve_filenames</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;textFile() resolved &quot;{0}&quot; to {1} files.&#39;</span>
+                  <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)))</span>
+
+        <span class="n">num_partitions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">minPartitions</span> <span class="ow">and</span> <span class="n">minPartitions</span> <span class="o">&gt;</span> <span class="n">num_partitions</span><span class="p">:</span>
+            <span class="n">num_partitions</span> <span class="o">=</span> <span class="n">minPartitions</span>
+
+        <span class="n">rdd_filenames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">,</span> <span class="n">num_partitions</span><span class="p">)</span>
+        <span class="n">rdd</span> <span class="o">=</span> <span class="n">rdd_filenames</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f_name</span><span class="p">:</span> <span class="p">[</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">File</span><span class="p">(</span><span class="n">f_name</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="p">])</span>
+        <span class="n">rdd</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="k">return</span> <span class="n">rdd</span>
+</div>
+<div class="viewcode-block" id="Context.union"><a class="viewcode-back" href="../../api.html#pysparkling.Context.union">[docs]</a>    <span class="k">def</span> <span class="nf">union</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param rdds:</span>
+<span class="sd">            Iterable of RDDs.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            New RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">rdd</span> <span class="ow">in</span> <span class="n">rdds</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rdd</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Context.version"><a class="viewcode-back" href="../../api.html#pysparkling.Context.version">[docs]</a>    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            Version of pysparkling.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span>
+
+</div></div>
+<span class="k">class</span> <span class="nc">DummyPool</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">input_list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">input_list</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Sven Kreiss.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.2.20',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

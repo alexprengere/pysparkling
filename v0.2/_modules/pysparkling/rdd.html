@@ -1,0 +1,1233 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pysparkling.rdd &mdash; pysparkling 0.2.20 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pysparkling 0.2.20 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../index.html" class="icon icon-home"> pysparkling
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#rdd">RDD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#context">Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#fileio">fileio</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">pysparkling</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>pysparkling.rdd</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for pysparkling.rdd</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides a Python implementation of RDDs.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">File</span>
+<span class="kn">from</span> <span class="nn">.stat_counter</span> <span class="kn">import</span> <span class="n">StatCounter</span>
+<span class="kn">from</span> <span class="nn">.partition</span> <span class="kn">import</span> <span class="n">PersistedPartition</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">FileAlreadyExistsException</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">izip</span> <span class="k">as</span> <span class="nb">zip</span>  <span class="c"># Python 2</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>                               <span class="c"># Python 3</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="RDD"><a class="viewcode-back" href="../../api.html#pysparkling.RDD">[docs]</a><span class="k">class</span> <span class="nc">RDD</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    In Spark&#39;s original form, RDDs are Resilient, Distributed Datasets.</span>
+<span class="sd">    This class reimplements the same interface with the goal of being</span>
+<span class="sd">    fast on small data at the cost of being resilient and distributed.</span>
+
+<span class="sd">    :param partitions:</span>
+<span class="sd">        A list of instances of :class:`Partition`.</span>
+
+<span class="sd">    :param ctx:</span>
+<span class="sd">        An instance of the applicable :class:`Context`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partitions</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p</span> <span class="o">=</span> <span class="n">partitions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">ctx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;_p&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">())</span>
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;context&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="n">r</span>
+
+<div class="viewcode-block" id="RDD.compute"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;split is a partition. This function is used in derived RDD</span>
+<span class="sd">        classes. To add smarter behavior for specific cases.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">split</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">tee</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_p</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Public API</span>
+<span class="sd">    ----------</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RDD.aggregate"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.aggregate">[docs]</a>    <span class="k">def</span> <span class="nf">aggregate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zeroValue</span><span class="p">,</span> <span class="n">seqOp</span><span class="p">,</span> <span class="n">combOp</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        [distributed]</span>
+
+<span class="sd">        :param zeroValue:</span>
+<span class="sd">            The initial value to an aggregation, for example ``0`` or ``0.0``</span>
+<span class="sd">            for aggregating ``int`` s and ``float`` s, but any Python object is</span>
+<span class="sd">            possible. Can be ``None``.</span>
+
+<span class="sd">        :param seqOp:</span>
+<span class="sd">            A reference to a function that combines the current state with a</span>
+<span class="sd">            new value. In the first iteration, the current state is zeroValue.</span>
+
+<span class="sd">        :param combOp:</span>
+<span class="sd">            A reference to a function that combines outputs of seqOp.</span>
+<span class="sd">            In the first iteration, the current state is zeroValue.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            Output of ``combOp`` operations.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
+                <span class="n">seqOp</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
+                <span class="n">combOp</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">)</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.aggregateByKey"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.aggregateByKey">[docs]</a>    <span class="k">def</span> <span class="nf">aggregateByKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zeroValue</span><span class="p">,</span> <span class="n">seqFunc</span><span class="p">,</span> <span class="n">combFunc</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        [distributed]</span>
+
+<span class="sd">        :param zeroValue:</span>
+<span class="sd">            The initial value to an aggregation, for example ``0`` or ``0.0``</span>
+<span class="sd">            for aggregating ``int`` s and ``float`` s, but any Python object is</span>
+<span class="sd">            possible. Can be ``None``.</span>
+
+<span class="sd">        :param seqFunc:</span>
+<span class="sd">            A reference to a function that combines the current state with a</span>
+<span class="sd">            new value. In the first iteration, the current state is zeroValue.</span>
+
+<span class="sd">        :param combFunc:</span>
+<span class="sd">            A reference to a function that combines outputs of seqFunc.</span>
+<span class="sd">            In the first iteration, the current state is zeroValue.</span>
+
+<span class="sd">        :param numPartitions: (optional)</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            Output of ``combOp`` operations.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">seqFuncByKey</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">seqFunc</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">r</span>
+
+        <span class="k">def</span> <span class="nf">combFuncByKey</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">combFunc</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">r</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seqFuncByKey</span><span class="p">,</span>
+                                   <span class="n">resultHandler</span><span class="o">=</span><span class="n">combFuncByKey</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.cache"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.cache">[docs]</a>    <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whenever a partition is computed, cache the result.</span>
+<span class="sd">        Alias for :func:`RDD.persist`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">persist</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.cartesian"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.cartesian">[docs]</a>    <span class="k">def</span> <span class="nf">cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            Another RDD.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with the cartesian product of this RDD with ``other``.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            This is currently implemented as a local operation requiring</span>
+<span class="sd">            all data to be pulled on one machine.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">v1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">()</span>
+        <span class="n">v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">v1</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">v2</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="RDD.coalesce"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.coalesce">[docs]</a>    <span class="k">def</span> <span class="nf">coalesce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numPartitions</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            Number of partitions in the resulting RDD.</span>
+
+<span class="sd">        :param shuffle: (optional)</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            This is currently implemented as a local operation requiring</span>
+<span class="sd">            all data to be pulled on one machine.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">(),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.collect"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.collect">[docs]</a>    <span class="k">def</span> <span class="nf">collect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The entire dataset as a list.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">l</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">p</span><span class="p">],</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.count"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.count">[docs]</a>    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            Number of entries in this dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">i</span><span class="p">),</span>
+                                   <span class="n">resultHandler</span><span class="o">=</span><span class="nb">sum</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.countApprox"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.countApprox">[docs]</a>    <span class="k">def</span> <span class="nf">countApprox</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Same as :func:`RDD.count()`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.countByKey"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.countByKey">[docs]</a>    <span class="k">def</span> <span class="nf">countByKey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            A ``dict`` containing the count for every key.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">map_func</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
+            <span class="k">return</span> <span class="n">r</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_func</span><span class="p">,</span>
+                                   <span class="n">resultHandler</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">sum_counts_by_keys</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.countByValue"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.countByValue">[docs]</a>    <span class="k">def</span> <span class="nf">countByValue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            A ``dict`` containing the count for every value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">map_func</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">r</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_func</span><span class="p">,</span>
+                                   <span class="n">resultHandler</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">sum_counts_by_keys</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.distinct"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.distinct">[docs]</a>    <span class="k">def</span> <span class="nf">distinct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            The number of partitions of the newly created RDD.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD containing only distict elements.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">())),</span>
+                                        <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.filter"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.filter">[docs]</a>    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            A reference to a function that if it evaluates to true when applied</span>
+<span class="sd">            to an element in the dataset, the element is kept.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">map_func</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">xx</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">if</span> <span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_func</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.first"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.first">[docs]</a>    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The first element in the dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">partition_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="n">partitions</span><span class="o">=</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">())],</span>
+            <span class="n">allowLocal</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">l</span><span class="p">),</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.flatMap"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.flatMap">[docs]</a>    <span class="k">def</span> <span class="nf">flatMap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A map operation followed by flattening.</span>
+
+<span class="sd">        :param f:</span>
+<span class="sd">            The map function.</span>
+
+<span class="sd">        :param preservesPartitioning: (optional)</span>
+<span class="sd">            Preserve the partitioning of the original RDD. Default True.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">e</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">)),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="n">preservesPartitioning</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.flatMapValues"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.flatMapValues">[docs]</a>    <span class="k">def</span> <span class="nf">flatMapValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A map operation on the values in a (key, value) pair followed by a map.</span>
+
+<span class="sd">        :param f:</span>
+<span class="sd">            The map function.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">((</span><span class="n">xx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.fold"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.fold">[docs]</a>    <span class="k">def</span> <span class="nf">fold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zeroValue</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param zeroValue:</span>
+<span class="sd">            The inital value, for example ``0`` or ``0.0``.</span>
+
+<span class="sd">        :param op:</span>
+<span class="sd">            The reduce operation.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            The folded (or aggregated) value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">op</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.foldByKey"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.foldByKey">[docs]</a>    <span class="k">def</span> <span class="nf">foldByKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zeroValue</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param zeroValue:</span>
+<span class="sd">            The inital value, for example ``0`` or ``0.0``.</span>
+
+<span class="sd">        :param op:</span>
+<span class="sd">            The reduce operation.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            The folded (or aggregated) value by key.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregateByKey</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">op</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.foreach"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.foreach">[docs]</a>    <span class="k">def</span> <span class="nf">foreach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies ``f`` to every element, but does not return a new RDD like</span>
+<span class="sd">        :func:`RDD.map()`.</span>
+
+<span class="sd">        :param f:</span>
+<span class="sd">            Apply a function to every element.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span><span class="p">],</span>
+                            <span class="n">resultHandler</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.foreachPartition"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.foreachPartition">[docs]</a>    <span class="k">def</span> <span class="nf">foreachPartition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies ``f`` to every partition, but does not return a new RDD like</span>
+<span class="sd">        :func:`RDD.mapPartitions()`.</span>
+
+<span class="sd">        :param f:</span>
+<span class="sd">            Apply a function to every partition.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+                            <span class="n">resultHandler</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.getNumPartitions"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.getNumPartitions">[docs]</a>    <span class="k">def</span> <span class="nf">getNumPartitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            Returns the number of partitions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="RDD.getPartitions"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.getPartitions">[docs]</a>    <span class="k">def</span> <span class="nf">getPartitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The partitions of this RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.groupBy"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.groupBy">[docs]</a>    <span class="k">def</span> <span class="nf">groupBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            Function returning a key given an element of the dataset.</span>
+
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            The number of partitions in the new grouped dataset.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">gg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">gg</span> <span class="ow">in</span> <span class="n">g</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keyBy</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()),</span>
+                <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.groupByKey"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.groupByKey">[docs]</a>    <span class="k">def</span> <span class="nf">groupByKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            The number of partitions in the new grouped dataset.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">gg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">gg</span> <span class="ow">in</span> <span class="n">g</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">()),</span>
+                <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.histogram"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.histogram">[docs]</a>    <span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buckets</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param buckets:</span>
+<span class="sd">            A list of bucket boundaries or an int for the number of buckets.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A tuple (bucket_boundaries, histogram_values) where</span>
+<span class="sd">            bucket_boundaries is a list of length n+1 boundaries and</span>
+<span class="sd">            histogram_values is a list of length n with the values of each</span>
+<span class="sd">            bucket.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">buckets</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">num_buckets</span> <span class="o">=</span> <span class="n">buckets</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span>
+            <span class="n">min_v</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">max_v</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">buckets</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_v</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">max_v</span><span class="o">-</span><span class="n">min_v</span><span class="p">)</span><span class="o">/</span><span class="n">num_buckets</span>
+                       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_buckets</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">buckets</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">buckets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">buckets</span><span class="p">[</span><span class="mi">1</span><span class="p">:])):</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c"># make the last bin inclusive on the right</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">buckets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">h</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">buckets</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># not implemented yet</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="RDD.intersection"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.intersection">[docs]</a>    <span class="k">def</span> <span class="nf">intersection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            The other dataset to do the intersection with.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD containing the intersection of this and the other RDD.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">())</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">()))</span>
+        <span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">isCheckpointed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="RDD.join"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.join">[docs]</a>    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            The other RDD.</span>
+
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            Number of partitions to create in the new RDD.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD containing the join.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">d1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">d2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span>
+        <span class="p">),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.keyBy"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.keyBy">[docs]</a>    <span class="k">def</span> <span class="nf">keyBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            Function that returns a key from a dataset element.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD containing the keyed data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="RDD.keys"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD containing the keys of the current RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="RDD.leftOuterJoin"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.leftOuterJoin">[docs]</a>    <span class="k">def</span> <span class="nf">leftOuterJoin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            The other RDD.</span>
+
+<span class="sd">        :param numPartitions: (optional)</span>
+<span class="sd">            Number of partitions of the resulting RDD.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with the result of the join.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d2</span> <span class="k">else</span> <span class="bp">None</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d1</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.lookup"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.lookup">[docs]</a>    <span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return all the (key, value) pairs where the given key matches.</span>
+
+<span class="sd">        :param key:</span>
+<span class="sd">            The key to lookup.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A list of matched (key, value) pairs.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">xx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">if</span> <span class="n">xx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">key</span><span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">ll</span> <span class="ow">in</span> <span class="n">l</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ll</span><span class="p">],</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.map"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            Map function.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with mapped values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span><span class="p">),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.mapPartitions"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.mapPartitions">[docs]</a>    <span class="k">def</span> <span class="nf">mapPartitions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            Map function.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with mapped partitions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="n">preservesPartitioning</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.mapValues"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.mapValues">[docs]</a>    <span class="k">def</span> <span class="nf">mapValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            Map function.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with mapped values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">((</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">x</span><span class="p">),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.max"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.max">[docs]</a>    <span class="k">def</span> <span class="nf">max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The maximum element.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.mean"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The mean of this dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.min"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.min">[docs]</a>    <span class="k">def</span> <span class="nf">min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The minimum element.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.name"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.name">[docs]</a>    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The name of the dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+</div>
+<div class="viewcode-block" id="RDD.persist"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.persist">[docs]</a>    <span class="k">def</span> <span class="nf">persist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storageLevel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cache the results of computed partitions.</span>
+
+<span class="sd">        :param storageLevel:</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">PersistedRDD</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storageLevel</span><span class="o">=</span><span class="n">storageLevel</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.pipe"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.pipe">[docs]</a>    <span class="k">def</span> <span class="nf">pipe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run a command with the elements in the dataset as argument.</span>
+
+<span class="sd">        :param command:</span>
+<span class="sd">            Command line command to run.</span>
+
+<span class="sd">        :param env:</span>
+<span class="sd">            ``dict`` of environment variables.</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">            Unsafe for untrusted data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">command</span><span class="p">]</span><span class="o">+</span><span class="n">x</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">command</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="RDD.reduce"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.reduce">[docs]</a>    <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            A commutative and associative binary operator.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.reduceByKey"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.reduceByKey">[docs]</a>    <span class="k">def</span> <span class="nf">reduceByKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param f:</span>
+<span class="sd">            A commutative and associative binary operator.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            This operation includes a :func:`pysparkling.RDD.groupByKey()`</span>
+<span class="sd">            which is a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">groupByKey</span><span class="p">()</span><span class="o">.</span><span class="n">mapValues</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="RDD.repartition"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.repartition">[docs]</a>    <span class="k">def</span> <span class="nf">repartition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numPartitions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            Number of partitions in new RDD.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">(),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.rightOuterJoin"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.rightOuterJoin">[docs]</a>    <span class="k">def</span> <span class="nf">rightOuterJoin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            The other RDD.</span>
+
+<span class="sd">        :param numPartitions: (optional)</span>
+<span class="sd">            Number of partitions of the resulting RDD.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with the result of the join.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d1</span> <span class="k">else</span> <span class="bp">None</span><span class="p">,</span> <span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d2</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">),</span> <span class="n">numPartitions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.sample"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">withReplacement</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param withReplacement:</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        :param fraction:</span>
+<span class="sd">            Specifies the probability that an element is sampled.</span>
+
+<span class="sd">        :param seed: (optional)</span>
+<span class="sd">            Seed for random number generator.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            Sampled RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">PartitionwiseSampledRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.saveAsTextFile"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.saveAsTextFile">[docs]</a>    <span class="k">def</span> <span class="nf">saveAsTextFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">compressionCodecClass</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param path:</span>
+<span class="sd">            Destination of the text file.</span>
+
+<span class="sd">        :param compressionCodecClass:</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            ``self``</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">File</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FileAlreadyExistsException</span><span class="p">(</span>
+                <span class="s">&#39;Output {0} already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">codec_suffix</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s">&#39;.gz&#39;</span><span class="p">,</span> <span class="s">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s">&#39;.lzo&#39;</span><span class="p">)):</span>
+            <span class="n">codec_suffix</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">path</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">):]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">File</span><span class="p">(</span>
+                <span class="n">path</span><span class="o">+</span><span class="s">&#39;/part-{0:05d}{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">partitionId</span><span class="p">(),</span> <span class="n">codec_suffix</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span>
+                <span class="s">u&#39;{0}</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span>
+            <span class="p">]),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">and</span> <span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;/_SUCCESS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+<div class="viewcode-block" id="RDD.sampleStdev"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.sampleStdev">[docs]</a>    <span class="k">def</span> <span class="nf">sampleStdev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            sample standard deviation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">sampleStdev</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.sampleVariance"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.sampleVariance">[docs]</a>    <span class="k">def</span> <span class="nf">sampleVariance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            sample variance</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">sampleVariance</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.stats"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.stats">[docs]</a>    <span class="k">def</span> <span class="nf">stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            A :class:`pysparkling.StatCounter` instance.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span>
+            <span class="n">StatCounter</span><span class="p">(),</span>
+            <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">b</span><span class="p">),</span>
+            <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">mergeStats</span><span class="p">(</span><span class="n">b</span><span class="p">),</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.stdev"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.stdev">[docs]</a>    <span class="k">def</span> <span class="nf">stdev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            standard deviation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">stdev</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.subtract"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.subtract">[docs]</a>    <span class="k">def</span> <span class="nf">subtract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            The RDD to be subtracted from the current RDD.</span>
+
+<span class="sd">        :param numPartitions:</span>
+<span class="sd">            Currently not used. Partitions are preserved.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            New RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">list_other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">if</span> <span class="n">e</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">list_other</span><span class="p">),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.sum"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.sum">[docs]</a>    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The sum of all the elements.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+                                   <span class="n">resultHandler</span><span class="o">=</span><span class="nb">sum</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.take"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.take">[docs]</a>    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Only evaluates the partitions that are necessary to return n elements.</span>
+
+<span class="sd">        :param n:</span>
+<span class="sd">            Number of elements to return.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            Elements of the dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">res_handler</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">return</span> <span class="n">r</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="n">res_handler</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.takeSample"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.takeSample">[docs]</a>    <span class="k">def</span> <span class="nf">takeSample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assumes samples are evenly distributed between partitions.</span>
+
+<span class="sd">        Only evaluates the partitions that are necessary to return n elements.</span>
+
+<span class="sd">        :param n:</span>
+<span class="sd">            The number of elements to sample.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            Samples from the dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">rnd_entries</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
+        <span class="n">num_partitions</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">())</span>
+
+        <span class="n">rnd_entries</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="o">*</span><span class="n">num_partitions</span><span class="p">),</span>  <span class="c"># partition number</span>
+                <span class="n">e</span><span class="o">*</span><span class="n">num_partitions</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="o">*</span><span class="n">num_partitions</span><span class="p">),</span>  <span class="c"># element in partition</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">rnd_entries</span>
+        <span class="p">]</span>
+        <span class="n">partition_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">rnd_entries</span><span class="p">]</span>
+        <span class="n">partitions</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">())</span>
+                      <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">partition_indices</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">res_handler</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">map_results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">rnd_entries</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e_list</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entries</span><span class="p">):</span>
+                <span class="n">p_result</span> <span class="o">=</span> <span class="n">map_results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">p_result</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">p_num</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">e_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">e_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">p_result</span><span class="p">))</span>
+                    <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_result</span><span class="p">[</span><span class="n">e_num</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">r</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">partitions</span><span class="o">=</span><span class="n">partitions</span><span class="p">,</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="n">res_handler</span><span class="p">,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.toLocalIterator"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.toLocalIterator">[docs]</a>    <span class="k">def</span> <span class="nf">toLocalIterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            An iterator over the dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">l</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">p</span><span class="p">),</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.union"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.union">[docs]</a>    <span class="k">def</span> <span class="nf">union</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            The other RDD for the union.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">union</span><span class="p">((</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="RDD.values"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.values">[docs]</a>    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            Values of a (key, value) dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="RDD.variance"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.variance">[docs]</a>    <span class="k">def</span> <span class="nf">variance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The variance of the dataset.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">variance</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.zip"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.zip">[docs]</a>    <span class="k">def</span> <span class="nf">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param other:</span>
+<span class="sd">            Other dataset to zip with.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            New RDD with zipped entries.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">())</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.zipWithUniqueId"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.zipWithUniqueId">[docs]</a>    <span class="k">def</span> <span class="nf">zipWithUniqueId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is a fast operation.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            New RDD where every entry is zipped with a unique index.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumPartitions</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">e</span><span class="o">*</span><span class="n">num_p</span><span class="o">+</span><span class="n">tc</span><span class="o">.</span><span class="n">partition_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">xx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+</div></div>
+<span class="k">class</span> <span class="nc">MapPartitionsRDD</span><span class="p">(</span><span class="n">RDD</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prev</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;prev is the previous RDD.</span>
+
+<span class="sd">        f is a function with the signature</span>
+<span class="sd">        (task_context, partition index, iterator over elements).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">RDD</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">partitions</span><span class="p">(),</span> <span class="n">prev</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">prev</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preservesPartitioning</span> <span class="o">=</span> <span class="n">preservesPartitioning</span>
+
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">task_context</span><span class="p">,</span> <span class="n">split</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="o">.</span><span class="n">_create_child</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">partitions</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">PartitionwiseSampledRDD</span><span class="p">(</span><span class="n">RDD</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prev</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;prev is the previous RDD.</span>
+
+<span class="sd">        f is a function with the signature</span>
+<span class="sd">        (task_context, partition index, iterator over elements).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">RDD</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">partitions</span><span class="p">(),</span> <span class="n">prev</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">seed</span><span class="p">:</span>
+            <span class="n">seed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">prev</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span> <span class="o">=</span> <span class="n">fraction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preservesPartitioning</span> <span class="o">=</span> <span class="n">preservesPartitioning</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="p">):</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="o">+</span><span class="n">split</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="o">.</span><span class="n">_create_child</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">partitions</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">PersistedRDD</span><span class="p">(</span><span class="n">RDD</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prev</span><span class="p">,</span> <span class="n">storageLevel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;prev is the previous RDD.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">RDD</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="n">PersistedPartition</span><span class="p">(</span>
+                    <span class="n">p</span><span class="o">.</span><span class="n">x</span><span class="p">(),</span>
+                    <span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                    <span class="n">storageLevel</span><span class="p">,</span>
+                <span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">prev</span><span class="o">.</span><span class="n">partitions</span><span class="p">()</span>
+            <span class="p">),</span>
+            <span class="n">prev</span><span class="o">.</span><span class="n">context</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">prev</span>
+
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">split</span><span class="o">.</span><span class="n">cache_x</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">split</span><span class="o">.</span><span class="n">set_cache_x</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="o">.</span><span class="n">_create_child</span><span class="p">())</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">split</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Sven Kreiss.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.2.20',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

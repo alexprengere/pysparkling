@@ -1,0 +1,1442 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API &mdash; pysparkling 0.2.20 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pysparkling 0.2.20 documentation" href="index.html"/>
+        <link rel="prev" title="Welcome to pysparkling’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> pysparkling
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#rdd">RDD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#context">Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fileio">fileio</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">pysparkling</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>API</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/api.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="api">
+<span id="id1"></span><h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<p>A usual <code class="docutils literal"><span class="pre">pysparkling</span></code> session starts with either parallelizing a <code class="docutils literal"><span class="pre">list</span></code> or
+by reading data from a file using the methods <code class="docutils literal"><span class="pre">Context.parallelize(my_list)</span></code>
+or <code class="docutils literal"><span class="pre">Context.textFile(&quot;path/to/textfile.txt&quot;)</span></code>. These two methods return an
+<code class="docutils literal"><span class="pre">RDD</span></code> which can then be processed with the methods below.</p>
+<div class="section" id="rdd">
+<h2>RDD<a class="headerlink" href="#rdd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysparkling.RDD">
+<em class="property">class </em><code class="descclassname">pysparkling.</code><code class="descname">RDD</code><span class="sig-paren">(</span><em>partitions</em>, <em>ctx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD" title="Permalink to this definition">¶</a></dt>
+<dd><p>In Spark&#8217;s original form, RDDs are Resilient, Distributed Datasets.
+This class reimplements the same interface with the goal of being
+fast on small data at the cost of being resilient and distributed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>partitions</strong> &#8211; A list of instances of <code class="xref py py-class docutils literal"><span class="pre">Partition</span></code>.</li>
+<li><strong>ctx</strong> &#8211; An instance of the applicable <code class="xref py py-class docutils literal"><span class="pre">Context</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pysparkling.RDD.aggregate">
+<code class="descname">aggregate</code><span class="sig-paren">(</span><em>zeroValue</em>, <em>seqOp</em>, <em>combOp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.aggregate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.aggregate" title="Permalink to this definition">¶</a></dt>
+<dd><p>[distributed]</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>zeroValue</strong> &#8211; The initial value to an aggregation, for example <code class="docutils literal"><span class="pre">0</span></code> or <code class="docutils literal"><span class="pre">0.0</span></code>
+for aggregating <code class="docutils literal"><span class="pre">int</span></code> s and <code class="docutils literal"><span class="pre">float</span></code> s, but any Python object is
+possible. Can be <code class="docutils literal"><span class="pre">None</span></code>.</li>
+<li><strong>seqOp</strong> &#8211; A reference to a function that combines the current state with a
+new value. In the first iteration, the current state is zeroValue.</li>
+<li><strong>combOp</strong> &#8211; A reference to a function that combines outputs of seqOp.
+In the first iteration, the current state is zeroValue.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Output of <code class="docutils literal"><span class="pre">combOp</span></code> operations.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.aggregateByKey">
+<code class="descname">aggregateByKey</code><span class="sig-paren">(</span><em>zeroValue</em>, <em>seqFunc</em>, <em>combFunc</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.aggregateByKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.aggregateByKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>[distributed]</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>zeroValue</strong> &#8211; The initial value to an aggregation, for example <code class="docutils literal"><span class="pre">0</span></code> or <code class="docutils literal"><span class="pre">0.0</span></code>
+for aggregating <code class="docutils literal"><span class="pre">int</span></code> s and <code class="docutils literal"><span class="pre">float</span></code> s, but any Python object is
+possible. Can be <code class="docutils literal"><span class="pre">None</span></code>.</li>
+<li><strong>seqFunc</strong> &#8211; A reference to a function that combines the current state with a
+new value. In the first iteration, the current state is zeroValue.</li>
+<li><strong>combFunc</strong> &#8211; A reference to a function that combines outputs of seqFunc.
+In the first iteration, the current state is zeroValue.</li>
+<li><strong>numPartitions</strong> &#8211; (optional)
+Not used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Output of <code class="docutils literal"><span class="pre">combOp</span></code> operations.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.cache">
+<code class="descname">cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whenever a partition is computed, cache the result.
+Alias for <code class="xref py py-func docutils literal"><span class="pre">RDD.persist()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.cartesian">
+<code class="descname">cartesian</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.cartesian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.cartesian" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> &#8211; Another RDD.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD with the cartesian product of this RDD with <code class="docutils literal"><span class="pre">other</span></code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is currently implemented as a local operation requiring
+all data to be pulled on one machine.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.coalesce">
+<code class="descname">coalesce</code><span class="sig-paren">(</span><em>numPartitions</em>, <em>shuffle=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.coalesce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.coalesce" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>numPartitions</strong> &#8211; Number of partitions in the resulting RDD.</li>
+<li><strong>shuffle</strong> &#8211; (optional)
+Not used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new RDD.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is currently implemented as a local operation requiring
+all data to be pulled on one machine.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.collect">
+<code class="descname">collect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.collect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.collect" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The entire dataset as a list.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>split</em>, <em>task_context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>split is a partition. This function is used in derived RDD
+classes. To add smarter behavior for specific cases.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.count">
+<code class="descname">count</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.count" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Number of entries in this dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.countApprox">
+<code class="descname">countApprox</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.countApprox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.countApprox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <code class="xref py py-func docutils literal"><span class="pre">RDD.count()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.countByKey">
+<code class="descname">countByKey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.countByKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.countByKey" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A <code class="docutils literal"><span class="pre">dict</span></code> containing the count for every key.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.countByValue">
+<code class="descname">countByValue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.countByValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.countByValue" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A <code class="docutils literal"><span class="pre">dict</span></code> containing the count for every value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.distinct">
+<code class="descname">distinct</code><span class="sig-paren">(</span><em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.distinct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.distinct" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>numPartitions</strong> &#8211; The number of partitions of the newly created RDD.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD containing only distict elements.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.filter">
+<code class="descname">filter</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.filter" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; A reference to a function that if it evaluates to true when applied
+to an element in the dataset, the element is kept.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.first">
+<code class="descname">first</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.first"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.first" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The first element in the dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.flatMap">
+<code class="descname">flatMap</code><span class="sig-paren">(</span><em>f</em>, <em>preservesPartitioning=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.flatMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.flatMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>A map operation followed by flattening.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>f</strong> &#8211; The map function.</li>
+<li><strong>preservesPartitioning</strong> &#8211; (optional)
+Preserve the partitioning of the original RDD. Default True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new RDD.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.flatMapValues">
+<code class="descname">flatMapValues</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.flatMapValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.flatMapValues" title="Permalink to this definition">¶</a></dt>
+<dd><p>A map operation on the values in a (key, value) pair followed by a map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; The map function.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.fold">
+<code class="descname">fold</code><span class="sig-paren">(</span><em>zeroValue</em>, <em>op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.fold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.fold" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>zeroValue</strong> &#8211; The inital value, for example <code class="docutils literal"><span class="pre">0</span></code> or <code class="docutils literal"><span class="pre">0.0</span></code>.</li>
+<li><strong>op</strong> &#8211; The reduce operation.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The folded (or aggregated) value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.foldByKey">
+<code class="descname">foldByKey</code><span class="sig-paren">(</span><em>zeroValue</em>, <em>op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.foldByKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.foldByKey" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>zeroValue</strong> &#8211; The inital value, for example <code class="docutils literal"><span class="pre">0</span></code> or <code class="docutils literal"><span class="pre">0.0</span></code>.</li>
+<li><strong>op</strong> &#8211; The reduce operation.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The folded (or aggregated) value by key.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.foreach">
+<code class="descname">foreach</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.foreach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.foreach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies <code class="docutils literal"><span class="pre">f</span></code> to every element, but does not return a new RDD like
+<code class="xref py py-func docutils literal"><span class="pre">RDD.map()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; Apply a function to every element.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.foreachPartition">
+<code class="descname">foreachPartition</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.foreachPartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.foreachPartition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies <code class="docutils literal"><span class="pre">f</span></code> to every partition, but does not return a new RDD like
+<code class="xref py py-func docutils literal"><span class="pre">RDD.mapPartitions()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; Apply a function to every partition.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.getNumPartitions">
+<code class="descname">getNumPartitions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.getNumPartitions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.getNumPartitions" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns the number of partitions.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.getPartitions">
+<code class="descname">getPartitions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.getPartitions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.getPartitions" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The partitions of this RDD.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.groupBy">
+<code class="descname">groupBy</code><span class="sig-paren">(</span><em>f</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.groupBy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.groupBy" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>f</strong> &#8211; Function returning a key given an element of the dataset.</li>
+<li><strong>numPartitions</strong> &#8211; The number of partitions in the new grouped dataset.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.groupByKey">
+<code class="descname">groupByKey</code><span class="sig-paren">(</span><em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.groupByKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.groupByKey" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>numPartitions</strong> &#8211; The number of partitions in the new grouped dataset.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.histogram">
+<code class="descname">histogram</code><span class="sig-paren">(</span><em>buckets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.histogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.histogram" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>buckets</strong> &#8211; A list of bucket boundaries or an int for the number of buckets.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple (bucket_boundaries, histogram_values) where
+bucket_boundaries is a list of length n+1 boundaries and
+histogram_values is a list of length n with the values of each
+bucket.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.intersection">
+<code class="descname">intersection</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.intersection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.intersection" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> &#8211; The other dataset to do the intersection with.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD containing the intersection of this and the other RDD.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.join">
+<code class="descname">join</code><span class="sig-paren">(</span><em>other</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.join"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.join" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>other</strong> &#8211; The other RDD.</li>
+<li><strong>numPartitions</strong> &#8211; Number of partitions to create in the new RDD.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new RDD containing the join.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.keyBy">
+<code class="descname">keyBy</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.keyBy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.keyBy" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; Function that returns a key from a dataset element.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD containing the keyed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.keys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.keys" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A new RDD containing the keys of the current RDD.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.leftOuterJoin">
+<code class="descname">leftOuterJoin</code><span class="sig-paren">(</span><em>other</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.leftOuterJoin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.leftOuterJoin" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>other</strong> &#8211; The other RDD.</li>
+<li><strong>numPartitions</strong> &#8211; (optional)
+Number of partitions of the resulting RDD.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new RDD with the result of the join.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.lookup">
+<code class="descname">lookup</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.lookup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the (key, value) pairs where the given key matches.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>key</strong> &#8211; The key to lookup.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list of matched (key, value) pairs.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.map" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; Map function.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD with mapped values.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.mapPartitions">
+<code class="descname">mapPartitions</code><span class="sig-paren">(</span><em>f</em>, <em>preservesPartitioning=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.mapPartitions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.mapPartitions" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; Map function.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD with mapped partitions.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.mapValues">
+<code class="descname">mapValues</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.mapValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.mapValues" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; Map function.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD with mapped values.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.max">
+<code class="descname">max</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.max"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.max" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The maximum element.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.mean">
+<code class="descname">mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.mean" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The mean of this dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.min">
+<code class="descname">min</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.min" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The minimum element.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.name" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The name of the dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.persist">
+<code class="descname">persist</code><span class="sig-paren">(</span><em>storageLevel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.persist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.persist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cache the results of computed partitions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>storageLevel</strong> &#8211; Not used.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.pipe">
+<code class="descname">pipe</code><span class="sig-paren">(</span><em>command</em>, <em>env={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.pipe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.pipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a command with the elements in the dataset as argument.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>command</strong> &#8211; Command line command to run.</li>
+<li><strong>env</strong> &#8211; <code class="docutils literal"><span class="pre">dict</span></code> of environment variables.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Unsafe for untrusted data.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.reduce">
+<code class="descname">reduce</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.reduce" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; A commutative and associative binary operator.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.reduceByKey">
+<code class="descname">reduceByKey</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.reduceByKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.reduceByKey" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> &#8211; A commutative and associative binary operator.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This operation includes a <a class="reference internal" href="#pysparkling.RDD.groupByKey" title="pysparkling.RDD.groupByKey"><code class="xref py py-func docutils literal"><span class="pre">pysparkling.RDD.groupByKey()</span></code></a>
+which is a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.repartition">
+<code class="descname">repartition</code><span class="sig-paren">(</span><em>numPartitions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.repartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.repartition" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>numPartitions</strong> &#8211; Number of partitions in new RDD.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.rightOuterJoin">
+<code class="descname">rightOuterJoin</code><span class="sig-paren">(</span><em>other</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.rightOuterJoin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.rightOuterJoin" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>other</strong> &#8211; The other RDD.</li>
+<li><strong>numPartitions</strong> &#8211; (optional)
+Number of partitions of the resulting RDD.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new RDD with the result of the join.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.sample">
+<code class="descname">sample</code><span class="sig-paren">(</span><em>withReplacement</em>, <em>fraction</em>, <em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.sample" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>withReplacement</strong> &#8211; Not used.</li>
+<li><strong>fraction</strong> &#8211; Specifies the probability that an element is sampled.</li>
+<li><strong>seed</strong> &#8211; (optional)
+Seed for random number generator.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Sampled RDD.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.sampleStdev">
+<code class="descname">sampleStdev</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.sampleStdev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.sampleStdev" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">sample standard deviation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.sampleVariance">
+<code class="descname">sampleVariance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.sampleVariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.sampleVariance" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">sample variance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.saveAsTextFile">
+<code class="descname">saveAsTextFile</code><span class="sig-paren">(</span><em>path</em>, <em>compressionCodecClass=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.saveAsTextFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.saveAsTextFile" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> &#8211; Destination of the text file.</li>
+<li><strong>compressionCodecClass</strong> &#8211; Not used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><code class="docutils literal"><span class="pre">self</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.stats">
+<code class="descname">stats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.stats" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A <code class="xref py py-class docutils literal"><span class="pre">pysparkling.StatCounter</span></code> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.stdev">
+<code class="descname">stdev</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.stdev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.stdev" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">standard deviation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.subtract">
+<code class="descname">subtract</code><span class="sig-paren">(</span><em>other</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.subtract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.subtract" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>other</strong> &#8211; The RDD to be subtracted from the current RDD.</li>
+<li><strong>numPartitions</strong> &#8211; Currently not used. Partitions are preserved.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New RDD.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.sum">
+<code class="descname">sum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.sum" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The sum of all the elements.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.take">
+<code class="descname">take</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.take"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.take" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only evaluates the partitions that are necessary to return n elements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> &#8211; Number of elements to return.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Elements of the dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.takeSample">
+<code class="descname">takeSample</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.takeSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.takeSample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assumes samples are evenly distributed between partitions.</p>
+<p>Only evaluates the partitions that are necessary to return n elements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> &#8211; The number of elements to sample.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Samples from the dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.toLocalIterator">
+<code class="descname">toLocalIterator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.toLocalIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.toLocalIterator" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An iterator over the dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.union">
+<code class="descname">union</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.union"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.union" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> &#8211; The other RDD for the union.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A new RDD.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.values" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Values of a (key, value) dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.variance">
+<code class="descname">variance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.variance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.variance" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The variance of the dataset.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.zip">
+<code class="descname">zip</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.zip" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> &#8211; Other dataset to zip with.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New RDD with zipped entries.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.RDD.zipWithUniqueId">
+<code class="descname">zipWithUniqueId</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.zipWithUniqueId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.zipWithUniqueId" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a fast operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">New RDD where every entry is zipped with a unique index.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="context">
+<h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
+<p>A <code class="docutils literal"><span class="pre">Context</span></code> describes the setup. Instantiating a Context with the default
+arguments using <code class="docutils literal"><span class="pre">Context()</span></code> is the most lightweight setup. All data is just
+in the local thread and is never serialized or deserialized.</p>
+<p>If you want to process the data in parallel, you can use the <code class="docutils literal"><span class="pre">multiprocessing</span></code>
+module. Given the limitations of the default <code class="docutils literal"><span class="pre">pickle</span></code> serializer, you can
+specify to serialize all methods with <code class="docutils literal"><span class="pre">dill</span></code> instead. For example, a common
+instantiation with <code class="docutils literal"><span class="pre">multiprocessing</span></code> looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">c</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span>
+    <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+    <span class="n">serializer</span><span class="o">=</span><span class="n">dill</span><span class="o">.</span><span class="n">dumps</span><span class="p">,</span>
+    <span class="n">deserializer</span><span class="o">=</span><span class="n">dill</span><span class="o">.</span><span class="n">loads</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This assumes that your data is serializable with <code class="docutils literal"><span class="pre">pickle</span></code> which is generally
+faster than <code class="docutils literal"><span class="pre">dill</span></code>. You can also specify a custom serializer/deserializer
+for data.</p>
+<dl class="class">
+<dt id="pysparkling.Context">
+<em class="property">class </em><code class="descclassname">pysparkling.</code><code class="descname">Context</code><span class="sig-paren">(</span><em>pool=None</em>, <em>serializer=None</em>, <em>deserializer=None</em>, <em>data_serializer=None</em>, <em>data_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pool</strong> &#8211; An instance with a <code class="docutils literal"><span class="pre">map(func,</span> <span class="pre">iterable)</span></code> method.</li>
+<li><strong>serializer</strong> &#8211; Serializer for functions. Examples are <code class="docutils literal"><span class="pre">pickle.dumps</span></code> and
+<code class="docutils literal"><span class="pre">dill.dumps</span></code>.</li>
+<li><strong>deserializer</strong> &#8211; Deserializer for functions. Examples are <code class="docutils literal"><span class="pre">pickle.loads</span></code> and
+<code class="docutils literal"><span class="pre">dill.loads</span></code>.</li>
+<li><strong>data_serializer</strong> &#8211; Serializer for the data.</li>
+<li><strong>data_deserializer</strong> &#8211; Deserializer for the data.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pysparkling.Context.parallelize">
+<code class="descname">parallelize</code><span class="sig-paren">(</span><em>x</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.parallelize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.parallelize" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; An iterable (e.g. a list) that represents the data.</li>
+<li><strong>numPartitions</strong> &#8211; (optional)
+The number of partitions the data should be split into.
+A partition is a unit of data that is processed at a time.
+Can be <code class="docutils literal"><span class="pre">None</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New RDD.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.Context.runJob">
+<code class="descname">runJob</code><span class="sig-paren">(</span><em>rdd</em>, <em>func</em>, <em>partitions=None</em>, <em>allowLocal=False</em>, <em>resultHandler=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.runJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.runJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is used by methods in the RDD.</p>
+<p>Note that the maps are only inside generators and the resultHandler
+needs to take care of executing the ones that it needs. In other words,
+if you need everything to be executed, the resultHandler needs to be
+at least <code class="docutils literal"><span class="pre">lambda</span> <span class="pre">x:</span> <span class="pre">list(x)</span></code> to trigger execution of the generators.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>func</strong> &#8211; Map function. The signature is
+func(TaskContext, Iterator over elements).</li>
+<li><strong>partitions</strong> &#8211; (optional)
+List of partitions that are involved. Default is <code class="docutils literal"><span class="pre">None</span></code>, meaning
+the map job is applied to all partitions.</li>
+<li><strong>allowLocal</strong> &#8211; (optional)
+Allows for local execution. Default is False.</li>
+<li><strong>resultHandler</strong> &#8211; (optional)
+Process the result from the maps.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Result of resultHandler.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.Context.textFile">
+<code class="descname">textFile</code><span class="sig-paren">(</span><em>filename</em>, <em>minPartitions=None</em>, <em>use_unicode=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.textFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.textFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a text file into an RDD.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> &#8211; Location of a file. Can include schemes like <code class="docutils literal"><span class="pre">http://</span></code>,
+<code class="docutils literal"><span class="pre">s3://</span></code> and <code class="docutils literal"><span class="pre">file://</span></code>.</li>
+<li><strong>minPartitions</strong> &#8211; (optional)
+By default, every file is a partition, but this option allows to
+split these further.</li>
+<li><strong>use_unicode</strong> &#8211; (optional)
+Not used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New RDD.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.Context.union">
+<code class="descname">union</code><span class="sig-paren">(</span><em>rdds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.union"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.union" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rdds</strong> &#8211; Iterable of RDDs.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New RDD.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.Context.version">
+<code class="descname">version</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.version" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Version of pysparkling.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="fileio">
+<h2>fileio<a class="headerlink" href="#fileio" title="Permalink to this headline">¶</a></h2>
+<p>The functionality provided by this module is used in <code class="docutils literal"><span class="pre">Context.textFile()</span></code>
+for reading and in <code class="docutils literal"><span class="pre">RDD.saveAsTextFile()</span></code> for writing. You can use this
+submodule for writing files directly with <code class="docutils literal"><span class="pre">File(filename).dump(some_data)</span></code>,
+<code class="docutils literal"><span class="pre">File(filename).load()</span></code> and <code class="docutils literal"><span class="pre">File.exists(path)</span></code> to read, write and check
+for existance of a file. All methods transparently handle <code class="docutils literal"><span class="pre">http://</span></code>, <code class="docutils literal"><span class="pre">s3://</span></code>
+and <code class="docutils literal"><span class="pre">file://</span></code> locations and compression/decompression of <code class="docutils literal"><span class="pre">.gz</span></code> and
+<code class="docutils literal"><span class="pre">.bz2</span></code> files.</p>
+<p>Use environment variables <code class="docutils literal"><span class="pre">AWS_SECRET_ACCESS_KEY</span></code> and <code class="docutils literal"><span class="pre">AWS_ACCESS_KEY_ID</span></code>
+for auth and use file paths of the form <code class="docutils literal"><span class="pre">s3://bucket_name/filename.txt</span></code>.</p>
+<dl class="class">
+<dt id="pysparkling.fileio.File">
+<em class="property">class </em><code class="descclassname">pysparkling.fileio.</code><code class="descname">File</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/file.html#File"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.File" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> &#8211; Any file name. Supports the schemes <code class="docutils literal"><span class="pre">http://</span></code>, <code class="docutils literal"><span class="pre">s3://</span></code> and
+<code class="docutils literal"><span class="pre">file://</span></code>.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pysparkling.fileio.File.dump">
+<code class="descname">dump</code><span class="sig-paren">(</span><em>stream=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/file.html#File.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.File.dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a stream to a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stream</strong> &#8211; A BytesIO instance.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pysparkling.fileio.File.exists">
+<em class="property">static </em><code class="descname">exists</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/file.html#File.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.File.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks both for a file or directory at this location.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; Path to check.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True or false.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.fileio.File.load">
+<code class="descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/file.html#File.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.File.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the data from a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A <code class="docutils literal"><span class="pre">io.BytesIO</span></code> instance. Use <code class="docutils literal"><span class="pre">getvalue()</span></code> to get a string.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysparkling.fileio.File.make_public">
+<code class="descname">make_public</code><span class="sig-paren">(</span><em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/file.html#File.make_public"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.File.make_public" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes the file public. Currently only supported on S3.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>recursive</strong> &#8211; Whether to apply this recursively.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pysparkling.fileio.File.resolve_filenames">
+<em class="property">static </em><code class="descname">resolve_filenames</code><span class="sig-paren">(</span><em>all_expr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/file.html#File.resolve_filenames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.File.resolve_filenames" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>all_expr</strong> &#8211; A comma separated list of expressions. The expressions can contain
+the wildcard characters <code class="docutils literal"><span class="pre">*</span></code> and <code class="docutils literal"><span class="pre">?</span></code>. It also resolves Spark
+datasets to the paths of the individual partitions
+(i.e. <code class="docutils literal"><span class="pre">my_data</span></code> gets resolved to
+<code class="docutils literal"><span class="pre">[my_data/part-00000,</span> <span class="pre">my_data/part-00001]</span></code>).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list of file names.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to pysparkling’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Sven Kreiss.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.20',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
