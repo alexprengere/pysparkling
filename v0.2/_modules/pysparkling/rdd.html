@@ -77,6 +77,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../api.html#fileio">fileio</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../parallel.html">Parallelization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../parallel.html#threads-and-processes">Threads and Processes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../parallel.html#ipcluster-and-ipython-parallel">ipcluster and IPython.parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../parallel.html#starcluster">StarCluster</a></li>
+</ul>
+</li>
 </ul>
 
           
@@ -120,8 +126,10 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="p">(</span><span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
 
+<span class="kn">import</span> <span class="nn">io</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">random</span>
@@ -132,7 +140,7 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">File</span>
+<span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">TextFile</span>
 <span class="kn">from</span> <span class="nn">.stat_counter</span> <span class="kn">import</span> <span class="n">StatCounter</span>
 <span class="kn">from</span> <span class="nn">.partition</span> <span class="kn">import</span> <span class="n">PersistedPartition</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">FileAlreadyExistsException</span>
@@ -388,10 +396,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">partition_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">None</span><span class="p">,</span>
-            <span class="n">partitions</span><span class="o">=</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partitions</span><span class="p">())],</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
             <span class="n">allowLocal</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">l</span><span class="p">),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">l</span><span class="p">)),</span>
         <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="RDD.flatMap"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.flatMap">[docs]</a>    <span class="k">def</span> <span class="nf">flatMap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
@@ -853,40 +860,6 @@
             <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
         <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="RDD.saveAsTextFile"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.saveAsTextFile">[docs]</a>    <span class="k">def</span> <span class="nf">saveAsTextFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">compressionCodecClass</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param path:</span>
-<span class="sd">            Destination of the text file.</span>
-
-<span class="sd">        :param compressionCodecClass:</span>
-<span class="sd">            Not used.</span>
-
-<span class="sd">        :returns:</span>
-<span class="sd">            ``self``</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">File</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FileAlreadyExistsException</span><span class="p">(</span>
-                <span class="s">&#39;Output {0} already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-            <span class="p">)</span>
-
-        <span class="n">codec_suffix</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s">&#39;.gz&#39;</span><span class="p">,</span> <span class="s">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s">&#39;.lzo&#39;</span><span class="p">)):</span>
-            <span class="n">codec_suffix</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">path</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">):]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">File</span><span class="p">(</span>
-                <span class="n">path</span><span class="o">+</span><span class="s">&#39;/part-{0:05d}{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">partitionId</span><span class="p">(),</span> <span class="n">codec_suffix</span><span class="p">)</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span>
-                <span class="s">u&#39;{0}</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span>
-            <span class="p">]),</span>
-            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">(</span>
-                <span class="nb">list</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">and</span> <span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;/_SUCCESS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
-</div>
 <div class="viewcode-block" id="RDD.sampleStdev"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.sampleStdev">[docs]</a>    <span class="k">def</span> <span class="nf">sampleStdev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :returns:</span>
@@ -902,6 +875,39 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">sampleVariance</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="RDD.saveAsTextFile"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.saveAsTextFile">[docs]</a>    <span class="k">def</span> <span class="nf">saveAsTextFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">compressionCodecClass</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param path:</span>
+<span class="sd">            Destination of the text file.</span>
+
+<span class="sd">        :param compressionCodecClass:</span>
+<span class="sd">            Not used.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            ``self``</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">TextFile</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FileAlreadyExistsException</span><span class="p">(</span>
+                <span class="s">&#39;Output {0} already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">codec_suffix</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s">&#39;.gz&#39;</span><span class="p">,</span> <span class="s">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s">&#39;.lzo&#39;</span><span class="p">)):</span>
+            <span class="n">codec_suffix</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">path</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">):]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">TextFile</span><span class="p">(</span>
+                <span class="n">path</span><span class="o">+</span><span class="s">&#39;/part-{0:05d}{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">partitionId</span><span class="p">(),</span> <span class="n">codec_suffix</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span>
+            <span class="p">]))),</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">l</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">TextFile</span><span class="p">(</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;/_SUCCESS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
 </div>
 <div class="viewcode-block" id="RDD.stats"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.stats">[docs]</a>    <span class="k">def</span> <span class="nf">stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -959,24 +965,18 @@
 <span class="sd">            Number of elements to return.</span>
 
 <span class="sd">        :returns:</span>
-<span class="sd">            Elements of the dataset.</span>
+<span class="sd">            Elements of the dataset in a list.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">res_handler</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-            <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
-                        <span class="k">break</span>
-                    <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
-                    <span class="k">break</span>
-            <span class="k">return</span> <span class="n">r</span>
-
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
-            <span class="n">resultHandler</span><span class="o">=</span><span class="n">res_handler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+            <span class="n">allowLocal</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span>
+                <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">l</span><span class="p">),</span>
+                <span class="n">n</span><span class="p">,</span>
+            <span class="p">)),</span>
         <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="RDD.takeSample"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.takeSample">[docs]</a>    <span class="k">def</span> <span class="nf">takeSample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
