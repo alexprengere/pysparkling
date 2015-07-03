@@ -131,6 +131,12 @@
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
 
+<span class="c"># there is no basestring in Python 3, so define string_types:</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">string_types</span> <span class="o">=</span> <span class="nb">basestring</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="n">string_types</span> <span class="o">=</span> <span class="nb">str</span>
+
 
 <div class="viewcode-block" id="TextFile"><a class="viewcode-back" href="../../../api.html#pysparkling.fileio.TextFile">[docs]</a><span class="k">class</span> <span class="nc">TextFile</span><span class="p">(</span><span class="n">File</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -171,7 +177,8 @@
 <span class="sd">        Writes a stream to a file.</span>
 
 <span class="sd">        :param stream:</span>
-<span class="sd">            An ``io.StringIO`` instance.</span>
+<span class="sd">            An ``io.StringIO`` instance. A ``basestring`` is also possible and</span>
+<span class="sd">            get converted to ``io.StringIO``.</span>
 
 <span class="sd">        :param encoding: (optional)</span>
 <span class="sd">            The character encoding of the file.</span>
@@ -182,6 +189,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">stream</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
         <span class="n">stream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
             <span class="n">BytesIO</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
