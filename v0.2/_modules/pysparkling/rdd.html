@@ -974,6 +974,19 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            Sorting is currently implemented as a local operation.</span>
 
+
+<span class="sd">        Examples:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize([5, 1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; rdd.sortBy(lambda x: x).collect()[0]</span>
+<span class="sd">        1</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize([1, 5, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; rdd.sortBy(lambda x: x, ascending=False).collect()[0]</span>
+<span class="sd">        5</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">numPartitions</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -1002,6 +1015,23 @@
 
 <span class="sd">        .. note::</span>
 <span class="sd">            Sorting is currently implemented as a local operation.</span>
+
+
+<span class="sd">        Examples:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize(</span>
+<span class="sd">        ...     [(5, &#39;a&#39;), (1, &#39;b&#39;), (2, &#39;c&#39;), (3, &#39;d&#39;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; rdd.sortByKey().collect()[0][1] == &#39;b&#39;</span>
+<span class="sd">        True</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize(</span>
+<span class="sd">        ...     [(1, &#39;b&#39;), (5, &#39;a&#39;), (2, &#39;c&#39;), (3, &#39;d&#39;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; rdd.sortByKey(ascending=False).collect()[0][1] == &#39;a&#39;</span>
+<span class="sd">        True</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sortBy</span><span class="p">(</span><span class="n">keyfunc</span><span class="p">,</span> <span class="n">ascending</span><span class="p">,</span> <span class="n">numPartitions</span><span class="p">)</span>
