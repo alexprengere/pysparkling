@@ -123,7 +123,11 @@
   <a class="reference external image-reference" href="https://github.com/svenkreiss/pysparkling"><img alt="https://raw.githubusercontent.com/svenkreiss/pysparkling/master/logo/logo-w100.png" src="https://raw.githubusercontent.com/svenkreiss/pysparkling/master/logo/logo-w100.png" /></a>
 <div class="section" id="welcome-to-pysparkling-s-documentation">
 <h1>Welcome to pysparkling&#8217;s documentation!<a class="headerlink" href="#welcome-to-pysparkling-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Please read the README at <a class="reference external" href="https://github.com/svenkreiss/pysparkling">https://github.com/svenkreiss/pysparkling</a></p>
+<p>Please read the README at <a class="reference external" href="https://github.com/svenkreiss/pysparkling">https://github.com/svenkreiss/pysparkling</a> and
+checkout the examples in this notebook:
+<a class="reference external" href="https://github.com/svenkreiss/pysparkling/blob/master/docs/demo.ipynb">https://github.com/svenkreiss/pysparkling/blob/master/docs/demo.ipynb</a></p>
+<p><code class="docutils literal"><span class="pre">pysparkling</span></code> is native Python implementation of Spark&#8217;s RDD interface. The primary objective to remove the dependency on the JVM and Hadoop. The focus is on having a lightweight and fast implementation for small datasets at the expense of some data resilience features and some parallel processing features. It is a drop-in replacement for PySpark&#8217;s SparkContext and RDD.</p>
+<p>Use case: you have a pipeline that processes 100k input documents and converts them to normalized features. They are used to train a local scikit-learn classifier. The preprocessing is perfect for a full Spark task. Now, you want to use this trained classifier in an API endpoint. Assume you need the same pre-processing pipeline for a single document per API call. This does not have to be done in parallel, but there should be only a small overhead in initialization and preferably no dependency on the JVM. This is what pysparkling is for.</p>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
 <ul>
