@@ -123,7 +123,8 @@
   <h1>Source code for pysparkling.context</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;Context.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">logging</span>
@@ -133,6 +134,7 @@
 <span class="kn">from</span> <span class="nn">.broadcast</span> <span class="kn">import</span> <span class="n">Broadcast</span>
 <span class="kn">from</span> <span class="nn">.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 <span class="kn">from</span> <span class="nn">.task_context</span> <span class="kn">import</span> <span class="n">TaskContext</span>
+<span class="kn">from</span> <span class="nn">.cache_manager</span> <span class="kn">import</span> <span class="n">CacheManager</span>
 <span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">TextFile</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">PYSPARKLING_VERSION</span>
 
@@ -146,16 +148,24 @@
 
 <span class="k">def</span> <span class="nf">runJob_map</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
     <span class="p">(</span><span class="n">deserializer</span><span class="p">,</span> <span class="n">data_serializer</span><span class="p">,</span> <span class="n">data_deserializer</span><span class="p">,</span>
-     <span class="n">serialized</span><span class="p">,</span> <span class="n">serialized_data</span><span class="p">)</span> <span class="o">=</span> <span class="n">i</span>
+     <span class="n">serialized</span><span class="p">,</span> <span class="n">serialized_data</span><span class="p">,</span> <span class="n">cache_manager</span><span class="p">)</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="k">if</span> <span class="n">cache_manager</span><span class="p">:</span>
+        <span class="n">CacheManager</span><span class="o">.</span><span class="n">_singleton</span> <span class="o">=</span> <span class="n">data_deserializer</span><span class="p">(</span><span class="n">cache_manager</span><span class="p">)</span>
+    <span class="n">cm_state</span> <span class="o">=</span> <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">stored_idents</span><span class="p">()</span>
+
     <span class="n">func</span><span class="p">,</span> <span class="n">rdd</span> <span class="o">=</span> <span class="n">deserializer</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
     <span class="n">partition</span> <span class="o">=</span> <span class="n">data_deserializer</span><span class="p">(</span><span class="n">serialized_data</span><span class="p">)</span>
     <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Worker function {0} is about to get executed with {1}&#39;</span>
               <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">partition</span><span class="p">))</span>
 
     <span class="n">task_context</span> <span class="o">=</span> <span class="n">TaskContext</span><span class="p">(</span><span class="n">stage_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">partition_id</span><span class="o">=</span><span class="n">partition</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">data_serializer</span><span class="p">(</span>
-        <span class="n">func</span><span class="p">(</span><span class="n">task_context</span><span class="p">,</span> <span class="n">rdd</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">task_context</span><span class="p">))</span>
-    <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">task_context</span><span class="p">,</span> <span class="n">rdd</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">task_context</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">data_serializer</span><span class="p">((</span>
+        <span class="n">result</span><span class="p">,</span>
+        <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">get_not_in</span><span class="p">(</span><span class="n">cm_state</span><span class="p">),</span>
+    <span class="p">))</span>
 
 
 <div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../api.html#pysparkling.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -266,8 +276,8 @@
 <span class="sd">        &gt;&gt;&gt; tmpFile.close()</span>
 <span class="sd">        &gt;&gt;&gt; with open(tmpFile.name, &#39;wb&#39;) as f:</span>
 <span class="sd">        ...     pickle.dump([&#39;hello&#39;, &#39;world&#39;], f)</span>
-<span class="sd">        &gt;&gt;&gt; Context().pickleFile(tmpFile.name).collect()[0]</span>
-<span class="sd">        &#39;hello&#39;</span>
+<span class="sd">        &gt;&gt;&gt; Context().pickleFile(tmpFile.name).collect()[0] == &#39;hello&#39;</span>
+<span class="sd">        True</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">resolved_names</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">resolve_filenames</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
@@ -327,18 +337,24 @@
                 <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">task_context</span><span class="p">,</span> <span class="n">rdd</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">task_context</span><span class="p">))</span>
             <span class="n">map_result</span> <span class="o">=</span> <span class="p">(</span><span class="n">local_map</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">partitions</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">map_result</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">map_and_cache</span><span class="p">():</span>
+                <span class="n">cm</span> <span class="o">=</span> <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">runJob_map</span><span class="p">,</span> <span class="p">[</span>
                     <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deserializer</span><span class="p">,</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span><span class="p">,</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span><span class="p">,</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">_serializer</span><span class="p">((</span><span class="n">func</span><span class="p">,</span> <span class="n">rdd</span><span class="p">)),</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span><span class="p">(</span><span class="n">p</span><span class="p">),</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span><span class="p">(</span>
+                        <span class="n">cm</span><span class="o">.</span><span class="n">clone_contains</span><span class="p">(</span><span class="s">&#39;:{0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+                     <span class="p">),</span>
                      <span class="p">)</span>
                     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">partitions</span>
-                <span class="p">])</span>
-            <span class="p">)</span>
+                <span class="p">]):</span>
+                    <span class="n">map_result</span><span class="p">,</span> <span class="n">cache_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                    <span class="n">cm</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cache_result</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">map_result</span>
+            <span class="n">map_result</span> <span class="o">=</span> <span class="n">map_and_cache</span><span class="p">()</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Map jobs generated.&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">resultHandler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
