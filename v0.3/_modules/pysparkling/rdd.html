@@ -182,7 +182,7 @@
 
 <div class="viewcode-block" id="RDD.compute"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;split is a partition. This function is used in derived RDD</span>
-<span class="sd">        classes. To add smarter behavior for specific cases.&quot;&quot;&quot;</span>
+<span class="sd">        classes to add smarter behavior for specific cases.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">split</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
 </div>
     <span class="k">def</span> <span class="nf">partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -294,6 +294,32 @@
 <span class="sd">        Whenever a partition is computed, cache the result.</span>
 <span class="sd">        Alias for :func:`RDD.persist`.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; n_exec = 0</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; def _map(e):</span>
+<span class="sd">        ...     global n_exec</span>
+<span class="sd">        ...     n_exec += 1</span>
+<span class="sd">        ...     return e*e</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([1, 2, 3, 4], 2)</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = my_rdd.map(_map).cache()</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # no exec until here</span>
+<span class="sd">        &gt;&gt;&gt; f = my_rdd.first()</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # executed map on first partition only so far</span>
+<span class="sd">        &gt;&gt;&gt; a = my_rdd.collect()</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # now _map() was executed on all partitions and should</span>
+<span class="sd">        &gt;&gt;&gt; # not be executed again</span>
+<span class="sd">        &gt;&gt;&gt; (my_rdd.collect(), n_exec)</span>
+<span class="sd">        ([1, 4, 9, 16], 6)</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">persist</span><span class="p">()</span>
 </div>
@@ -374,7 +400,7 @@
 <span class="sd">        Example:</span>
 
 <span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
-<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 3]).count()</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 3], 2).count()</span>
 <span class="sd">        3</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -485,10 +511,16 @@
 <span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 2, 4, 1, 3, 5, 9], 3).first()</span>
 <span class="sd">        1</span>
 
+<span class="sd">        Works also with empty partitions:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2], 20).first()</span>
+<span class="sd">        1</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">iterable</span><span class="p">,</span>
             <span class="n">allowLocal</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
             <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">l</span><span class="p">)),</span>
         <span class="p">)</span>
@@ -559,6 +591,14 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            The folded (or aggregated) value.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([4, 7, 2])</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.fold(0, lambda a, b: a+b)</span>
+<span class="sd">        13</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">op</span><span class="p">)</span>
 </div>
@@ -573,6 +613,14 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            The folded (or aggregated) value by key.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([(&#39;a&#39;, 4), (&#39;b&#39;, 7), (&#39;a&#39;, 2)])</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.foldByKey(0, lambda a, b: a+b)[&#39;a&#39;]</span>
+<span class="sd">        6</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregateByKey</span><span class="p">(</span><span class="n">zeroValue</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">op</span><span class="p">)</span>
 </div>
@@ -583,6 +631,16 @@
 
 <span class="sd">        :param f:</span>
 <span class="sd">            Apply a function to every element.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; a = []</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.foreach(lambda x: a.append(x))</span>
+<span class="sd">        &gt;&gt;&gt; len(a)</span>
+<span class="sd">        3</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span><span class="p">],</span>
@@ -627,6 +685,14 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([4, 7, 2])</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.groupBy(lambda x: x % 2).collect()</span>
+<span class="sd">        [(0, [2, 4]), (1, [7])]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
             <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">gg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">gg</span> <span class="ow">in</span> <span class="n">g</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
@@ -662,6 +728,15 @@
 <span class="sd">            histogram_values is a list of length n with the values of each</span>
 <span class="sd">            bucket.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([0, 4, 7, 4, 10])</span>
+<span class="sd">        &gt;&gt;&gt; b, h = my_rdd.histogram(10)</span>
+<span class="sd">        &gt;&gt;&gt; h</span>
+<span class="sd">        [1, 0, 0, 0, 2, 0, 0, 1, 0, 0, 1]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">buckets</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">num_buckets</span> <span class="o">=</span> <span class="n">buckets</span>
@@ -695,6 +770,15 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd1 = Context().parallelize([0, 4, 7, 4, 10])</span>
+<span class="sd">        &gt;&gt;&gt; rdd2 = Context().parallelize([3, 4, 7, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; rdd1.intersection(rdd2).collect()</span>
+<span class="sd">        [4, 7]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
             <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">())</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">()))</span>
@@ -717,6 +801,15 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd1 = Context().parallelize([(0, 1), (1, 1)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd2 = Context().parallelize([(2, 1), (1, 3)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd1.join(rdd2).collect()</span>
+<span class="sd">        [(1, (1, 3))]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
         <span class="n">d2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
@@ -734,6 +827,14 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            A new RDD containing the keyed data.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize([0, 4, 7, 4, 10])</span>
+<span class="sd">        &gt;&gt;&gt; rdd.keyBy(lambda x: x % 2).collect()</span>
+<span class="sd">        [(0, 0), (0, 4), (1, 7), (0, 4), (0, 10)]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
 </div>
@@ -741,6 +842,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :returns:</span>
 <span class="sd">            A new RDD containing the keys of the current RDD.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([(0, 1), (1, 1)]).keys().collect()</span>
+<span class="sd">        [0, 1]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -758,6 +866,15 @@
 
 <span class="sd">        .. note::</span>
 <span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd1 = Context().parallelize([(0, 1), (1, 1)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd2 = Context().parallelize([(2, 1), (1, 3)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd1.leftOuterJoin(rdd2).collect()</span>
+<span class="sd">        [(0, (1, None)), (1, (1, 3))]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
@@ -777,6 +894,13 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            A list of matched (key, value) pairs.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([(0, 1), (1, 1), (1, 3)]).lookup(1)</span>
+<span class="sd">        [1, 3]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -792,6 +916,13 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            A new RDD with mapped values.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 3]).map(lambda x: x+1).collect()</span>
+<span class="sd">        [2, 3, 4]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -806,6 +937,16 @@
 
 <span class="sd">        :returns:</span>
 <span class="sd">            A new RDD with mapped partitions.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize([1, 2, 3, 4], 2)</span>
+<span class="sd">        &gt;&gt;&gt; def f(iterator):</span>
+<span class="sd">        ...     yield sum(iterator)</span>
+<span class="sd">        &gt;&gt;&gt; rdd.mapPartitions(f).collect()</span>
+<span class="sd">        [3, 7]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
@@ -834,6 +975,13 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            The maximum element.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 3, 4, 3, 2], 2).max()</span>
+<span class="sd">        4</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 </div>
@@ -841,6 +989,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :returns:</span>
 <span class="sd">            The mean of this dataset.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([0, 4, 7, 4, 10]).mean()</span>
+<span class="sd">        5.0</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -884,6 +1039,14 @@
 <span class="sd">        .. warning::</span>
 <span class="sd">            Unsafe for untrusted data.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; piped = Context().parallelize([&#39;0&#39;, &#39;hello&#39;, &#39;world&#39;]).pipe(&#39;echo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; &#39;hello\\n&#39; in piped.collect()</span>
+<span class="sd">        True</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
             <span class="p">[</span><span class="n">command</span><span class="p">]</span><span class="o">+</span><span class="n">x</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">command</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span>
@@ -906,6 +1069,15 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            A list of RDDs.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize(range(500))</span>
+<span class="sd">        &gt;&gt;&gt; rdd1, rdd2 = rdd.randomSplit([2, 3], seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; (rdd1.count(), rdd2.count())</span>
+<span class="sd">        (199, 301)</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sum_weights</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="n">boundaries</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -927,6 +1099,13 @@
 <span class="sd">        :param f:</span>
 <span class="sd">            A commutative and associative binary operator.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([0, 4, 7, 4, 10]).reduce(lambda a, b: a+b)</span>
+<span class="sd">        25</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -942,6 +1121,14 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            This operation includes a :func:`pysparkling.RDD.groupByKey()`</span>
 <span class="sd">            which is a local operation.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize([(0, 1), (1, 1), (1, 3)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd.reduceByKey(lambda a, b: a+b).collect()</span>
+<span class="sd">        [(0, 1), (1, 4)]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">groupByKey</span><span class="p">()</span><span class="o">.</span><span class="n">mapValues</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
@@ -974,6 +1161,15 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd1 = Context().parallelize([(0, 1), (1, 1)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd2 = Context().parallelize([(2, 1), (1, 3)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd1.rightOuterJoin(rdd2).collect()</span>
+<span class="sd">        [(1, (1, 3)), (2, (None, 1))]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
         <span class="n">d2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
@@ -996,6 +1192,16 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            Sampled RDD.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd = Context().parallelize(range(100))</span>
+<span class="sd">        &gt;&gt;&gt; sampled = rdd.sample(False, 0.1, seed=5)</span>
+<span class="sd">        &gt;&gt;&gt; all(s1 == s2 for s1, s2 in zip(sampled.collect(),</span>
+<span class="sd">        ...                                sampled.collect()))</span>
+<span class="sd">        True</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">PartitionwiseSampledRDD</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span>
@@ -1008,6 +1214,13 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            sample standard deviation</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 3]).sampleStdev()</span>
+<span class="sd">        1.0</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">sampleStdev</span><span class="p">()</span>
 </div>
@@ -1015,6 +1228,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :returns:</span>
 <span class="sd">            sample variance</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1, 2, 3]).sampleVariance()</span>
+<span class="sd">        1.0</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">sampleVariance</span><span class="p">()</span>
@@ -1200,6 +1420,15 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            A :class:`pysparkling.StatCounter` instance.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; d = [1, 4, 9, 16, 25, 36]</span>
+<span class="sd">        &gt;&gt;&gt; s = Context().parallelize(d, 3).stats()</span>
+<span class="sd">        &gt;&gt;&gt; sum(d)/len(d) == s.mean()</span>
+<span class="sd">        True</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span>
             <span class="n">StatCounter</span><span class="p">(),</span>
@@ -1211,6 +1440,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :returns:</span>
 <span class="sd">            standard deviation</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1.5, 2.5]).stdev()</span>
+<span class="sd">        0.5</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">stdev</span><span class="p">()</span>
@@ -1226,6 +1462,15 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            New RDD.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; rdd1 = Context().parallelize([(0, 1), (1, 1)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd2 = Context().parallelize([(1, 1), (1, 3)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd1.subtract(rdd2).collect()</span>
+<span class="sd">        [(0, 1)]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">list_other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
@@ -1238,6 +1483,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :returns:</span>
 <span class="sd">            The sum of all the elements.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([0, 4, 7, 4, 10]).sum()</span>
+<span class="sd">        25</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
@@ -1252,6 +1504,21 @@
 
 <span class="sd">        :returns:</span>
 <span class="sd">            Elements of the dataset in a list.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([4, 7, 2]).take(2)</span>
+<span class="sd">        [4, 7]</span>
+
+
+<span class="sd">        Another example where only the first two partitions only are computed</span>
+<span class="sd">        (check the debug logs):</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([4, 7, 2], 3).take(2)</span>
+<span class="sd">        [4, 7]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1276,6 +1543,22 @@
 
 <span class="sd">        :returns:</span>
 <span class="sd">            Samples from the dataset.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([4, 7, 2]).takeSample(1)[0] in [4, 7, 2]</span>
+<span class="sd">        True</span>
+
+
+<span class="sd">        Another example where only one partition is computed</span>
+<span class="sd">        (check the debug logs):</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; d = [4, 9, 7, 3, 2, 5]</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize(d, 3).takeSample(1)[0] in d</span>
+<span class="sd">        True</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1316,6 +1599,13 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            An iterator over the dataset.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; sum(Context().parallelize([4, 9, 7, 3, 2, 5], 3).toLocalIterator())</span>
+<span class="sd">        30</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
@@ -1329,6 +1619,14 @@
 
 <span class="sd">        :returns:</span>
 <span class="sd">            A new RDD.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([4, 9, 7, 3, 2, 5], 3)</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.union(my_rdd).count()</span>
+<span class="sd">        12</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">union</span><span class="p">((</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
@@ -1346,6 +1644,13 @@
 <span class="sd">        :returns:</span>
 <span class="sd">            The variance of the dataset.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; Context().parallelize([1.5, 2.5]).variance()</span>
+<span class="sd">        0.25</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">variance</span><span class="p">()</span>
 </div>
@@ -1360,6 +1665,14 @@
 <span class="sd">        .. note::</span>
 <span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
 
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([4, 9, 7, 3, 2, 5], 3)</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.zip(my_rdd).collect()</span>
+<span class="sd">        [(4, 4), (9, 9), (7, 7), (3, 3), (2, 2), (5, 5)]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
             <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">())</span>
@@ -1371,6 +1684,14 @@
 
 <span class="sd">        :returns:</span>
 <span class="sd">            New RDD where every entry is zipped with a unique index.</span>
+
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([423, 234, 986, 5, 345], 3)</span>
+<span class="sd">        &gt;&gt;&gt; my_rdd.zipWithUniqueId().collect()</span>
+<span class="sd">        [(423, 0), (234, 1), (986, 4), (5, 2), (345, 5)]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">num_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumPartitions</span><span class="p">()</span>

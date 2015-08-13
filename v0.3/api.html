@@ -227,6 +227,31 @@ Not used.</li>
 <code class="descname">cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whenever a partition is computed, cache the result.
 Alias for <code class="xref py py-func docutils literal"><span class="pre">RDD.persist()</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_exec</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">_map</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">global</span> <span class="n">n_exec</span>
+<span class="gp">... </span>    <span class="n">n_exec</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">e</span><span class="o">*</span><span class="n">e</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">my_rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_map</span><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># no exec until here</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">my_rdd</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># executed map on first partition only so far</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">my_rdd</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># now _map() was executed on all partitions and should</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># not be executed again</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">my_rdd</span><span class="o">.</span><span class="n">collect</span><span class="p">(),</span> <span class="n">n_exec</span><span class="p">)</span>
+<span class="go">([1, 4, 9, 16], 6)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -311,7 +336,7 @@ all data to be pulled on one machine.</p>
 <dt id="pysparkling.RDD.compute">
 <code class="descname">compute</code><span class="sig-paren">(</span><em>split</em>, <em>task_context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.compute" title="Permalink to this definition">¶</a></dt>
 <dd><p>split is a partition. This function is used in derived RDD
-classes. To add smarter behavior for specific cases.</p>
+classes to add smarter behavior for specific cases.</p>
 </dd></dl>
 
 <dl class="method">
@@ -327,7 +352,7 @@ classes. To add smarter behavior for specific cases.</p>
 </table>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 <span class="go">3</span>
 </pre></div>
 </div>
@@ -440,6 +465,12 @@ to an element in the dataset, the element is kept.</td>
 <span class="go">1</span>
 </pre></div>
 </div>
+<p>Works also with empty partitions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -514,6 +545,13 @@ Preserve the partitioning of the original RDD. Default True.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">fold</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span>
+<span class="go">13</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -534,6 +572,13 @@ Preserve the partitioning of the original RDD. Default True.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">foldByKey</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)[</span><span class="s">&#39;a&#39;</span><span class="p">]</span>
+<span class="go">6</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -549,6 +594,15 @@ Preserve the partitioning of the original RDD. Default True.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">foreach</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -611,6 +665,13 @@ Preserve the partitioning of the original RDD. Default True.</li>
 <p class="first admonition-title">Note</p>
 <p class="last">Creating the new RDD is currently implemented as a local operation.</p>
 </div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(0, [2, 4]), (1, [7])]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -646,6 +707,14 @@ bucket.</td>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">my_rdd</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span>
+<span class="go">[1, 0, 0, 0, 2, 0, 0, 1, 0, 0, 1]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -664,6 +733,14 @@ bucket.</td>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Creating the new RDD is currently implemented as a local operation.</p>
+</div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd2</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">rdd2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[4, 7]</span>
+</pre></div>
 </div>
 </dd></dl>
 
@@ -689,6 +766,14 @@ bucket.</td>
 <p class="first admonition-title">Note</p>
 <p class="last">Creating the new RDD is currently implemented as a local operation.</p>
 </div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd2</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rdd2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(1, (1, 3))]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -704,6 +789,13 @@ bucket.</td>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">keyBy</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(0, 0), (0, 4), (1, 7), (0, 4), (0, 10)]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -717,6 +809,12 @@ bucket.</td>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[0, 1]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -742,6 +840,14 @@ Number of partitions of the resulting RDD.</li>
 <p class="first admonition-title">Note</p>
 <p class="last">Creating the new RDD is currently implemented as a local operation.</p>
 </div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd2</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span><span class="o">.</span><span class="n">leftOuterJoin</span><span class="p">(</span><span class="n">rdd2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(0, (1, None)), (1, (1, 3))]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -758,6 +864,12 @@ Number of partitions of the resulting RDD.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">[1, 3]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -773,6 +885,12 @@ Number of partitions of the resulting RDD.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[2, 3, 4]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -788,6 +906,15 @@ Number of partitions of the resulting RDD.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">iterator</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">yield</span> <span class="nb">sum</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">mapPartitions</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[3, 7]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -816,6 +943,12 @@ Number of partitions of the resulting RDD.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+<span class="go">4</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -829,6 +962,12 @@ Number of partitions of the resulting RDD.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="go">5.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -891,6 +1030,13 @@ Number of partitions of the resulting RDD.</li>
 <p class="first admonition-title">Warning</p>
 <p class="last">Unsafe for untrusted data.</p>
 </div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">piped</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;world&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="s">&#39;echo&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;hello</span><span class="se">\n</span><span class="s">&#39;</span> <span class="ow">in</span> <span class="n">piped</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -917,6 +1063,14 @@ operation.</p>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span><span class="p">,</span> <span class="n">rdd2</span> <span class="o">=</span> <span class="n">rdd</span><span class="o">.</span><span class="n">randomSplit</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">rdd1</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span> <span class="n">rdd2</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+<span class="go">(199, 301)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -930,6 +1084,12 @@ operation.</p>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span>
+<span class="go">25</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -947,6 +1107,13 @@ operation.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">This operation includes a <a class="reference internal" href="#pysparkling.RDD.groupByKey" title="pysparkling.RDD.groupByKey"><code class="xref py py-func docutils literal"><span class="pre">pysparkling.RDD.groupByKey()</span></code></a>
 which is a local operation.</p>
+</div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(0, 1), (1, 4)]</span>
+</pre></div>
 </div>
 </dd></dl>
 
@@ -992,6 +1159,14 @@ Number of partitions of the resulting RDD.</li>
 <p class="first admonition-title">Note</p>
 <p class="last">Creating the new RDD is currently implemented as a local operation.</p>
 </div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd2</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span><span class="o">.</span><span class="n">rightOuterJoin</span><span class="p">(</span><span class="n">rdd2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(1, (1, 3)), (2, (None, 1))]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1014,6 +1189,15 @@ Seed for random number generator.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sampled</span> <span class="o">=</span> <span class="n">rdd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="bp">False</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">all</span><span class="p">(</span><span class="n">s1</span> <span class="o">==</span> <span class="n">s2</span> <span class="k">for</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sampled</span><span class="o">.</span><span class="n">collect</span><span class="p">(),</span>
+<span class="gp">... </span>                               <span class="n">sampled</span><span class="o">.</span><span class="n">collect</span><span class="p">()))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1027,6 +1211,12 @@ Seed for random number generator.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">sampleStdev</span><span class="p">()</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1040,6 +1230,12 @@ Seed for random number generator.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">sampleVariance</span><span class="p">()</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1181,6 +1377,14 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">36</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sum</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1194,6 +1398,12 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span><span class="o">.</span><span class="n">stdev</span><span class="p">()</span>
+<span class="go">0.5</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1214,6 +1424,14 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd2</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd1</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">rdd2</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(0, 1)]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1227,6 +1445,12 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="go">25</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1243,6 +1467,19 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[4, 7]</span>
+</pre></div>
+</div>
+<p>Another example where only the first two partitions only are computed
+(check the debug logs):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[4, 7]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1260,6 +1497,20 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">takeSample</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Another example where only one partition is computed
+(check the debug logs):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">takeSample</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">d</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1273,6 +1524,12 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sum</span><span class="p">(</span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">toLocalIterator</span><span class="p">())</span>
+<span class="go">30</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1288,6 +1545,13 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">my_rdd</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">12</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1314,6 +1578,12 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span><span class="o">.</span><span class="n">variance</span><span class="p">()</span>
+<span class="go">0.25</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1333,6 +1603,13 @@ partitions as the input.</li>
 <p class="first admonition-title">Note</p>
 <p class="last">Creating the new RDD is currently implemented as a local operation.</p>
 </div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">my_rdd</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(4, 4), (9, 9), (7, 7), (3, 3), (2, 2), (5, 5)]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1347,6 +1624,13 @@ partitions as the input.</li>
 </tr>
 </tbody>
 </table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">423</span><span class="p">,</span> <span class="mi">234</span><span class="p">,</span> <span class="mi">986</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">345</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_rdd</span><span class="o">.</span><span class="n">zipWithUniqueId</span><span class="p">()</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="go">[(423, 0), (234, 1), (986, 4), (5, 2), (345, 5)]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>
