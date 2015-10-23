@@ -79,7 +79,6 @@
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Parallelization</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#threads-and-processes">Threads and Processes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#ipcluster-and-ipython-parallel">ipcluster and IPython.parallel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#starcluster">StarCluster</a></li>
 </ul>
 </li>
@@ -131,52 +130,8 @@ of computers.</p>
 <code class="docutils literal"><span class="pre">concurrent.futures.ProcessPoolExecutor</span></code> and
 <code class="docutils literal"><span class="pre">multiprocessing.Pool</span></code> is supported.</p>
 </div>
-<div class="section" id="ipcluster-and-ipython-parallel">
-<h2>ipcluster and IPython.parallel<a class="headerlink" href="#ipcluster-and-ipython-parallel" title="Permalink to this headline">¶</a></h2>
-<p>Local test setup:</p>
-<div class="highlight-bash"><div class="highlight"><pre>ipcluster start --n<span class="o">=</span>2
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">IPython.parallel</span> <span class="kn">import</span> <span class="n">Client</span>
-
-<span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">()</span>
-<span class="k">print</span><span class="p">(</span><span class="n">c</span><span class="p">[:]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="s">&#39;hello world&#39;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-</pre></div>
-</div>
-<p>which should print <code class="docutils literal"><span class="pre">['hello</span> <span class="pre">world',</span> <span class="pre">'hello</span> <span class="pre">world']</span></code>.</p>
-<p>To run on a cluster, create a profile:</p>
-<div class="highlight-bash"><div class="highlight"><pre>ipython profile create --parallel --profile<span class="o">=</span>smallcluster
-
-<span class="c"># start controller:</span>
-<span class="c"># Creates ~/.ipython/profile_smallcluster/security/ipcontroller-engine.json</span>
-<span class="c"># which is used by the engines to identify the location of this controller.</span>
-<span class="c"># This is the local-only IP address. Substitute with the machines IP</span>
-<span class="c"># address so that the engines can find it.</span>
-ipcontroller --ip<span class="o">=</span>127.0.0.1 --port<span class="o">=</span><span class="m">7123</span> --profile<span class="o">=</span>smallcluster
-
-<span class="c"># start engines (assuming they have access to the</span>
-<span class="c"># ipcontroller-engine.json file)</span>
-ipengine --profile<span class="o">=</span>smallcluster
-</pre></div>
-</div>
-<p>Test it in Python:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">IPython.parallel</span> <span class="kn">import</span> <span class="n">Client</span>
-
-<span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s">&#39;smallcluster&#39;</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">c</span><span class="p">[:]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="s">&#39;hello world&#39;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-</pre></div>
-</div>
-<p>If you don&#8217;t want to start the engines manually, <code class="docutils literal"><span class="pre">ipcluster</span></code> comes with
-&#8220;Launchers&#8221; that can start them for you:
-<a class="reference external" href="https://ipython.org/ipython-doc/dev/parallel/parallel_process.html#using-ipcluster-in-ssh-mode">https://ipython.org/ipython-doc/dev/parallel/parallel_process.html#using-ipcluster-in-ssh-mode</a></p>
-</div>
 <div class="section" id="starcluster">
 <h2>StarCluster<a class="headerlink" href="#starcluster" title="Permalink to this headline">¶</a></h2>
-<p>Setting up StarCluster was an experiment. However it does not integrate well
-with the rest of our EC2 infrastructure, so we switched to a Chef based setup
-where we use <code class="docutils literal"><span class="pre">ipcluster</span></code> directly. A blocker was that the number of engines
-per node is not configurable and we have many map jobs that wait on external
-responses.</p>
 <p>Setup</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c"># install</span>
 pip install starcluster
@@ -215,8 +170,6 @@ starcluster start smallcluster
 starcluster listclusters
 </pre></div>
 </div>
-<p>Currently use: <code class="docutils literal"><span class="pre">ami-da180db2</span></code> (Ubuntu 14.04 with 100GB EBS) on
-<code class="docutils literal"><span class="pre">m3.medium</span></code> instances.</p>
 <p>Workarounds:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c"># this seems to be a dependency that does not get installed</span>
 pip install pexpect
@@ -242,13 +195,13 @@ starcluster sshmaster smallcluster
 <p>Install your own software that is not on pypi:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">pip</span> <span class="n">install</span> <span class="n">wheel</span>
 <span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">bdist_wheel</span>  <span class="c"># add --universal for Python2 and 3 packages</span>
-<span class="n">starcluster</span> <span class="n">put</span> <span class="n">smallcluster</span> <span class="n">dist</span><span class="o">/</span><span class="n">your_package_name</span><span class="o">.</span><span class="n">whl</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">sgeadmin</span><span class="o">/</span><span class="n">your_package_name</span><span class="o">.</span><span class="n">whl</span>
+<span class="n">starcluster</span> <span class="n">put</span> <span class="n">smallcluster</span> <span class="n">dist</span><span class="o">/</span><span class="n">your_package_name</span><span class="o">.</span><span class="n">whl</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">package_name</span>
 
 <span class="c"># ssh into remote machine</span>
 <span class="n">starcluster</span> <span class="n">sshmaster</span> <span class="n">smallcluster</span>
 <span class="o">&gt;</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">pip</span>
 <span class="o">&gt;</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">wheel</span>
-<span class="o">&gt;</span> <span class="n">pip2</span><span class="o">.</span><span class="mi">7</span> <span class="n">install</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">sgeadmin</span><span class="o">/</span><span class="n">your_package_name</span><span class="o">.</span><span class="n">whl</span>
+<span class="o">&gt;</span> <span class="n">pip2</span><span class="o">.</span><span class="mi">7</span> <span class="n">install</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">package_name</span><span class="o">/</span><span class="n">your_package_name</span><span class="o">.</span><span class="n">whl</span>
 </pre></div>
 </div>
 </div>

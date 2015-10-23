@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pysparkling.context &mdash; pysparkling 0.2.20 documentation</title>
+  <title>pysparkling.context &mdash; pysparkling 0.3.8 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="pysparkling 0.2.20 documentation" href="../../index.html"/>
+    <link rel="top" title="pysparkling 0.3.8 documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -151,8 +151,14 @@
      <span class="n">serialized</span><span class="p">,</span> <span class="n">serialized_data</span><span class="p">,</span> <span class="n">cache_manager</span><span class="p">)</span> <span class="o">=</span> <span class="n">i</span>
 
     <span class="k">if</span> <span class="n">cache_manager</span><span class="p">:</span>
-        <span class="n">CacheManager</span><span class="o">.</span><span class="n">_singleton</span> <span class="o">=</span> <span class="n">data_deserializer</span><span class="p">(</span><span class="n">cache_manager</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton__</span><span class="p">:</span>
+            <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton__</span> <span class="o">=</span> <span class="n">data_deserializer</span><span class="p">(</span><span class="n">cache_manager</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">data_deserializer</span><span class="p">(</span><span class="n">cache_manager</span><span class="p">)</span><span class="o">.</span><span class="n">cache_obj</span>
+            <span class="p">)</span>
     <span class="n">cm_state</span> <span class="o">=</span> <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">stored_idents</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Cache indices available in map: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cm_state</span><span class="p">))</span>
 
     <span class="n">func</span><span class="p">,</span> <span class="n">rdd</span> <span class="o">=</span> <span class="n">deserializer</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
     <span class="n">partition</span> <span class="o">=</span> <span class="n">data_deserializer</span><span class="p">(</span><span class="n">serialized_data</span><span class="p">)</span>
@@ -189,6 +195,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="n">__last_rdd_id</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">serializer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">deserializer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                  <span class="n">data_serializer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">data_deserializer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">pool</span><span class="p">:</span>
@@ -208,7 +216,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_data_serializer</span> <span class="o">=</span> <span class="n">data_serializer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data_deserializer</span> <span class="o">=</span> <span class="n">data_deserializer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_s3_conn</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_last_rdd_id</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">PYSPARKLING_VERSION</span>
 
@@ -216,8 +223,8 @@
         <span class="k">return</span> <span class="n">Broadcast</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">newRddId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_last_rdd_id</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_rdd_id</span>
+        <span class="n">Context</span><span class="o">.</span><span class="n">__last_rdd_id</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">Context</span><span class="o">.</span><span class="n">__last_rdd_id</span>
 
 <div class="viewcode-block" id="Context.parallelize"><a class="viewcode-back" href="../../api.html#pysparkling.Context.parallelize">[docs]</a>    <span class="k">def</span> <span class="nf">parallelize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -492,7 +499,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.2.20',
+            VERSION:'0.3.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

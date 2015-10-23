@@ -79,7 +79,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../parallel.html">Parallelization</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../parallel.html#threads-and-processes">Threads and Processes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../parallel.html#ipcluster-and-ipython-parallel">ipcluster and IPython.parallel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../parallel.html#starcluster">StarCluster</a></li>
 </ul>
 </li>
@@ -125,7 +124,7 @@
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 
@@ -133,7 +132,7 @@
 <span class="kn">from</span> <span class="nn">.broadcast</span> <span class="kn">import</span> <span class="n">Broadcast</span>
 <span class="kn">from</span> <span class="nn">.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 <span class="kn">from</span> <span class="nn">.task_context</span> <span class="kn">import</span> <span class="n">TaskContext</span>
-<span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">TextFile</span>
+<span class="kn">from</span> <span class="nn">.fileio</span> <span class="kn">import</span> <span class="n">File</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">PYSPARKLING_VERSION</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
@@ -239,52 +238,6 @@
 
         <span class="k">return</span> <span class="n">RDD</span><span class="p">(</span><span class="n">partitioned</span><span class="p">(),</span> <span class="bp">self</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Context.pickleFile"><a class="viewcode-back" href="../../api.html#pysparkling.Context.pickleFile">[docs]</a>    <span class="k">def</span> <span class="nf">pickleFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">minPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read a pickle file created with :func:`RDD.saveAsPickleFile()`</span>
-<span class="sd">        into an RDD.</span>
-
-<span class="sd">        :param name:</span>
-<span class="sd">            Location of a file. Can include schemes like ``http://``,</span>
-<span class="sd">            ``s3://`` and ``file://``, wildcard characters ``?`` and ``*``</span>
-<span class="sd">            and multiple expressions separated by ``,``.</span>
-
-<span class="sd">        :param minPartitions: (optional)</span>
-<span class="sd">            By default, every file is a partition, but this option allows to</span>
-<span class="sd">            split these further.</span>
-
-<span class="sd">        :returns:</span>
-<span class="sd">            New RDD.</span>
-
-
-<span class="sd">        Example with a serialized list:</span>
-
-<span class="sd">        &gt;&gt;&gt; import pickle</span>
-<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
-<span class="sd">        &gt;&gt;&gt; from tempfile import NamedTemporaryFile</span>
-<span class="sd">        &gt;&gt;&gt; tmpFile = NamedTemporaryFile(delete=True)</span>
-<span class="sd">        &gt;&gt;&gt; tmpFile.close()</span>
-<span class="sd">        &gt;&gt;&gt; with open(tmpFile.name, &#39;wb&#39;) as f:</span>
-<span class="sd">        ...     pickle.dump([&#39;hello&#39;, &#39;world&#39;], f)</span>
-<span class="sd">        &gt;&gt;&gt; Context().pickleFile(tmpFile.name).collect()[0]</span>
-<span class="sd">        &#39;hello&#39;</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">resolved_names</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">resolve_filenames</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;pickleFile() resolved &quot;{0}&quot; to {1} files.&#39;</span>
-                  <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)))</span>
-
-        <span class="n">num_partitions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">minPartitions</span> <span class="ow">and</span> <span class="n">minPartitions</span> <span class="o">&gt;</span> <span class="n">num_partitions</span><span class="p">:</span>
-            <span class="n">num_partitions</span> <span class="o">=</span> <span class="n">minPartitions</span>
-
-        <span class="n">rdd_filenames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">,</span> <span class="n">num_partitions</span><span class="p">)</span>
-        <span class="n">rdd</span> <span class="o">=</span> <span class="n">rdd_filenames</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">f_name</span><span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">File</span><span class="p">(</span><span class="n">f_name</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">())</span>
-        <span class="p">)</span>
-        <span class="n">rdd</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="k">return</span> <span class="n">rdd</span>
-</div>
 <div class="viewcode-block" id="Context.runJob"><a class="viewcode-back" href="../../api.html#pysparkling.Context.runJob">[docs]</a>    <span class="k">def</span> <span class="nf">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdd</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">partitions</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">allowLocal</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                <span class="n">resultHandler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -351,8 +304,7 @@
 
 <span class="sd">        :param filename:</span>
 <span class="sd">            Location of a file. Can include schemes like ``http://``,</span>
-<span class="sd">            ``s3://`` and ``file://``, wildcard characters ``?`` and ``*``</span>
-<span class="sd">            and multiple expressions separated by ``,``.</span>
+<span class="sd">            ``s3://`` and ``file://``.</span>
 
 <span class="sd">        :param minPartitions: (optional)</span>
 <span class="sd">            By default, every file is a partition, but this option allows to</span>
@@ -365,7 +317,7 @@
 <span class="sd">            New RDD.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">resolved_names</span> <span class="o">=</span> <span class="n">TextFile</span><span class="o">.</span><span class="n">resolve_filenames</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">resolved_names</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">resolve_filenames</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;textFile() resolved &quot;{0}&quot; to {1} files.&#39;</span>
                   <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)))</span>
 
@@ -376,7 +328,7 @@
         <span class="n">rdd_filenames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">,</span> <span class="n">num_partitions</span><span class="p">)</span>
         <span class="n">rdd</span> <span class="o">=</span> <span class="n">rdd_filenames</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f_name</span><span class="p">:</span> <span class="p">[</span>
             <span class="n">l</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">TextFile</span><span class="p">(</span><span class="n">f_name</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">File</span><span class="p">(</span><span class="n">f_name</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
         <span class="p">])</span>
         <span class="n">rdd</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">filename</span>
         <span class="k">return</span> <span class="n">rdd</span>
@@ -401,42 +353,6 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span>
-</div>
-<div class="viewcode-block" id="Context.wholeTextFiles"><a class="viewcode-back" href="../../api.html#pysparkling.Context.wholeTextFiles">[docs]</a>    <span class="k">def</span> <span class="nf">wholeTextFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">minPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">use_unicode</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read text files into an RDD of pairs of file name and file content.</span>
-
-<span class="sd">        :param path:</span>
-<span class="sd">            Location of the files. Can include schemes like ``http://``,</span>
-<span class="sd">            ``s3://`` and ``file://``, wildcard characters ``?`` and ``*``</span>
-<span class="sd">            and multiple expressions separated by ``,``.</span>
-
-<span class="sd">        :param minPartitions: (optional)</span>
-<span class="sd">            By default, every file is a partition, but this option allows to</span>
-<span class="sd">            split these further.</span>
-
-<span class="sd">        :param use_unicode: (optional)</span>
-<span class="sd">            Not used.</span>
-
-<span class="sd">        :returns:</span>
-<span class="sd">            New RDD.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">resolved_names</span> <span class="o">=</span> <span class="n">TextFile</span><span class="o">.</span><span class="n">resolve_filenames</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;textFile() resolved &quot;{0}&quot; to {1} files.&#39;</span>
-                  <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)))</span>
-
-        <span class="n">num_partitions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">minPartitions</span> <span class="ow">and</span> <span class="n">minPartitions</span> <span class="o">&gt;</span> <span class="n">num_partitions</span><span class="p">:</span>
-            <span class="n">num_partitions</span> <span class="o">=</span> <span class="n">minPartitions</span>
-
-        <span class="n">rdd_filenames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">resolved_names</span><span class="p">,</span> <span class="n">num_partitions</span><span class="p">)</span>
-        <span class="n">rdd</span> <span class="o">=</span> <span class="n">rdd_filenames</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f_name</span><span class="p">:</span> <span class="p">(</span>
-            <span class="n">f_name</span><span class="p">,</span>
-            <span class="n">TextFile</span><span class="p">(</span><span class="n">f_name</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
-        <span class="p">))</span>
-        <span class="n">rdd</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">path</span>
-        <span class="k">return</span> <span class="n">rdd</span>
 
 </div></div>
 <span class="k">class</span> <span class="nc">DummyPool</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>

@@ -79,7 +79,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../parallel.html">Parallelization</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../parallel.html#threads-and-processes">Threads and Processes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../parallel.html#ipcluster-and-ipython-parallel">ipcluster and IPython.parallel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../parallel.html#starcluster">StarCluster</a></li>
 </ul>
 </li>
@@ -197,8 +196,7 @@
 <span class="sd">        Writes a stream to a file.</span>
 
 <span class="sd">        :param stream:</span>
-<span class="sd">            A BytesIO instance. ``bytes`` are also possible and are converted</span>
-<span class="sd">            to BytesIO.</span>
+<span class="sd">            A BytesIO instance.</span>
 
 <span class="sd">        :returns:</span>
 <span class="sd">            self</span>
@@ -206,9 +204,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">stream</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-            <span class="n">stream</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
         <span class="n">stream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pysparkling.rdd &mdash; pysparkling 0.2.20 documentation</title>
+  <title>pysparkling.rdd &mdash; pysparkling 0.3.8 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="pysparkling 0.2.20 documentation" href="../../index.html"/>
+    <link rel="top" title="pysparkling 0.3.8 documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -298,6 +298,7 @@
 <span class="sd">        Example:</span>
 
 <span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; from pysparkling import CacheManager</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; n_exec = 0</span>
 <span class="sd">        &gt;&gt;&gt;</span>
@@ -309,16 +310,28 @@
 <span class="sd">        &gt;&gt;&gt; my_rdd = Context().parallelize([1, 2, 3, 4], 2)</span>
 <span class="sd">        &gt;&gt;&gt; my_rdd = my_rdd.map(_map).cache()</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # no exec until here</span>
+<span class="sd">        &gt;&gt;&gt; logging.info(&#39;no exec until here&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; f = my_rdd.first()</span>
+<span class="sd">        &gt;&gt;&gt; logging.info(&#39;available caches in {1}: {0}&#39;.format(</span>
+<span class="sd">        ...     CacheManager.singleton().stored_idents(),</span>
+<span class="sd">        ...     CacheManager.singleton(),</span>
+<span class="sd">        ... ))</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # executed map on first partition only so far</span>
+<span class="sd">        &gt;&gt;&gt; logging.info(&#39;executed map on first partition only so far&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; a = my_rdd.collect()</span>
+<span class="sd">        &gt;&gt;&gt; logging.info(&#39;available caches in {1}: {0}&#39;.format(</span>
+<span class="sd">        ...     CacheManager.singleton().stored_idents(),</span>
+<span class="sd">        ...     CacheManager.singleton(),</span>
+<span class="sd">        ... ))</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # now _map() was executed on all partitions and should</span>
-<span class="sd">        &gt;&gt;&gt; # not be executed again</span>
+<span class="sd">        &gt;&gt;&gt; logging.info(&#39;now _map() was executed on all partitions and should&#39;</span>
+<span class="sd">        ...              &#39;not be executed again&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; logging.info(&#39;available caches in {1}: {0}&#39;.format(</span>
+<span class="sd">        ...     CacheManager.singleton().stored_idents(),</span>
+<span class="sd">        ...     CacheManager.singleton(),</span>
+<span class="sd">        ... ))</span>
 <span class="sd">        &gt;&gt;&gt; (my_rdd.collect(), n_exec)</span>
-<span class="sd">        ([1, 4, 9, 16], 6)</span>
+<span class="sd">        ([1, 4, 9, 16], 4)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">persist</span><span class="p">()</span>
@@ -426,16 +439,10 @@
 <span class="sd">        &gt;&gt;&gt; Context().parallelize(</span>
 <span class="sd">        ...     [(&#39;a&#39;, 1), (&#39;b&#39;, 2), (&#39;b&#39;, 2)]</span>
 <span class="sd">        ... ).countByKey()[&#39;b&#39;]</span>
-<span class="sd">        4</span>
+<span class="sd">        2</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">def</span> <span class="nf">map_func</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-            <span class="n">r</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-                <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
-            <span class="k">return</span> <span class="n">r</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_func</span><span class="p">,</span>
-                                   <span class="n">resultHandler</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">sum_counts_by_keys</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">countByValue</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="RDD.countByValue"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.countByValue">[docs]</a>    <span class="k">def</span> <span class="nf">countByValue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -496,9 +503,11 @@
 <span class="sd">        [2, 2, 4]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">def</span> <span class="nf">map_func</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">xx</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">if</span> <span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_func</span><span class="p">,</span> <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">MapPartitionsRDD</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">xx</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">if</span> <span class="n">f</span><span class="p">(</span><span class="n">xx</span><span class="p">)),</span>
+            <span class="n">preservesPartitioning</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="RDD.first"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.first">[docs]</a>    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -658,6 +667,42 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
                             <span class="n">resultHandler</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RDD.fullOuterJoin"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.fullOuterJoin">[docs]</a>    <span class="k">def</span> <span class="nf">fullOuterJoin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">numPartitions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the full outer join of two RDDs.</span>
+
+<span class="sd">        :param other:</span>
+<span class="sd">            The RDD to join to this one.</span>
+
+<span class="sd">        :param numPartitions: (optional)</span>
+<span class="sd">            Number of partitions of the resulting join.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            A new RDD with all keys from both input RDDs, with missing</span>
+<span class="sd">            keys replaced with None.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Creating the new RDD is currently implemented as a local operation.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">        &gt;&gt;&gt; from pysparkling import Context</span>
+<span class="sd">        &gt;&gt;&gt; sc = Context()</span>
+<span class="sd">        &gt;&gt;&gt; rdd1 = sc.parallelize([(&#39;a&#39;, 0), (&#39;b&#39;, 1)])</span>
+<span class="sd">        &gt;&gt;&gt; rdd2 = sc.parallelize([(&#39;b&#39;, 2), (&#39;c&#39;, 3)])</span>
+<span class="sd">        &gt;&gt;&gt; sorted(</span>
+<span class="sd">        ...     rdd1.fullOuterJoin(rdd2).collect()</span>
+<span class="sd">        ... )  # doctest: +IGNORE_UNICODE</span>
+<span class="sd">        [(&#39;a&#39;, (0, None)), (&#39;b&#39;, (1, 2)), (&#39;c&#39;, (None, 3))]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">d1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">d1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">d2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">parallelize</span><span class="p">((</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">d1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="n">d2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">None</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">),</span> <span class="n">numPartitions</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="RDD.getNumPartitions"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.getNumPartitions">[docs]</a>    <span class="k">def</span> <span class="nf">getNumPartitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -903,11 +948,7 @@
 <span class="sd">        [1, 3]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runJob</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="k">lambda</span> <span class="n">tc</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">xx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">if</span> <span class="n">xx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">key</span><span class="p">),</span>
-            <span class="n">resultHandler</span><span class="o">=</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">ll</span> <span class="ow">in</span> <span class="n">l</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ll</span><span class="p">],</span>
-        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="RDD.map"><a class="viewcode-back" href="../../api.html#pysparkling.RDD.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1769,14 +1810,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cid</span> <span class="o">=</span> <span class="s">&#39;{0}:{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rdd_id</span><span class="p">,</span> <span class="n">split</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">cid</span><span class="p">):</span>
-            <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+        <span class="n">cm</span> <span class="o">=</span> <span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cm</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">cid</span><span class="p">):</span>
+            <span class="n">cm</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
                 <span class="n">cid</span><span class="p">,</span>
                 <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">task_context</span><span class="o">.</span><span class="n">_create_child</span><span class="p">())),</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">storageLevel</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">CacheManager</span><span class="o">.</span><span class="n">singleton</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
 </pre></div>
 
           </div>
@@ -1808,7 +1850,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.2.20',
+            VERSION:'0.3.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

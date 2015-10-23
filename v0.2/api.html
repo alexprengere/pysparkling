@@ -79,8 +79,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallelization</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="parallel.html#threads-and-processes">Threads and Processes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallel.html#ipcluster-and-ipython-parallel">ipcluster and IPython.parallel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="parallel.html#starcluster">StarCluster</a></li>
 </ul>
 </li>
@@ -799,32 +797,6 @@ Number of partitions of the resulting RDD.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysparkling.RDD.randomSplit">
-<code class="descname">randomSplit</code><span class="sig-paren">(</span><em>weights</em>, <em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.randomSplit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.randomSplit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Split the RDD into a few RDDs according to the given weights.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Creating the new RDDs is currently implemented as a local
-operation.</p>
-</div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>weights</strong> &#8211; Determines the relative lengths of the resulting RDDs.</li>
-<li><strong>seed</strong> &#8211; Seed for random number generator.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of RDDs.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="pysparkling.RDD.reduce">
 <code class="descname">reduce</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.reduce" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
@@ -948,35 +920,9 @@ Seed for random number generator.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysparkling.RDD.saveAsPickleFile">
-<code class="descname">saveAsPickleFile</code><span class="sig-paren">(</span><em>path</em>, <em>batchSize=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.saveAsPickleFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.saveAsPickleFile" title="Permalink to this definition">¶</a></dt>
-<dd><div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">The output of this function is incompatible with the PySpark
-output as there is no pure Python way to write Sequence files.</p>
-</div>
-<p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">NamedTemporaryFile</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tmpFile</span> <span class="o">=</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tmpFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;world&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">saveAsPickleFile</span><span class="p">(</span><span class="n">tmpFile</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;hello&#39;</span> <span class="ow">in</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">pickleFile</span><span class="p">(</span><span class="n">tmpFile</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
-<span class="go">True</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
 <dt id="pysparkling.RDD.saveAsTextFile">
 <code class="descname">saveAsTextFile</code><span class="sig-paren">(</span><em>path</em>, <em>compressionCodecClass=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.saveAsTextFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.saveAsTextFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>If the RDD has many partitions, the contents will be stored directly
-in the given path. If the RDD has more partitions, the data of the
-partitions are stored in individual files under <code class="docutils literal"><span class="pre">path/part-00000</span></code> and
-so on and once all partitions are written, the file <code class="docutils literal"><span class="pre">path/_SUCCESS</span></code>
-is written last.</p>
-<table class="docutils field-list" frame="void" rules="none">
+<dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
@@ -991,88 +937,6 @@ is written last.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="pysparkling.RDD.sortBy">
-<code class="descname">sortBy</code><span class="sig-paren">(</span><em>keyfunc</em>, <em>ascending=True</em>, <em>numPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.sortBy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.sortBy" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>keyfunc</strong> &#8211; Returns the value that will be sorted.</li>
-<li><strong>ascending</strong> &#8211; Default is True.</li>
-<li><strong>numPartitions</strong> &#8211; Default is None. None means the output will have the same number of
-partitions as the input.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new sorted RDD.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Sorting is currently implemented as a local operation.</p>
-</div>
-<p>Examples:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">sortBy</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-<span class="go">1</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">sortBy</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-<span class="go">5</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="pysparkling.RDD.sortByKey">
-<code class="descname">sortByKey</code><span class="sig-paren">(</span><em>ascending=True</em>, <em>numPartitions=None</em>, <em>keyfunc=&lt;function &lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/rdd.html#RDD.sortByKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.RDD.sortByKey" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ascending</strong> &#8211; Default is True.</li>
-<li><strong>numPartitions</strong> &#8211; Default is None. None means the output will have the same number of
-partitions as the input.</li>
-<li><strong>keyfunc</strong> &#8211; Returns the value that will be sorted.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new sorted RDD.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Sorting is currently implemented as a local operation.</p>
-</div>
-<p>Examples:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="p">[(</span><span class="mi">5</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">)]</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">sortByKey</span><span class="p">()</span><span class="o">.</span><span class="n">collect</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;b&#39;</span>
-<span class="go">True</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">)]</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdd</span><span class="o">.</span><span class="n">sortByKey</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;a&#39;</span>
-<span class="go">True</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="method">
@@ -1144,7 +1008,7 @@ partitions as the input.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> &#8211; Number of elements to return.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Elements of the dataset in a list.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Elements of the dataset.</td>
 </tr>
 </tbody>
 </table>
@@ -1264,17 +1128,18 @@ arguments using <code class="docutils literal"><span class="pre">Context()</span
 in the local thread and is never serialized or deserialized.</p>
 <p>If you want to process the data in parallel, you can use the <code class="docutils literal"><span class="pre">multiprocessing</span></code>
 module. Given the limitations of the default <code class="docutils literal"><span class="pre">pickle</span></code> serializer, you can
-specify to serialize all methods with <code class="docutils literal"><span class="pre">cloudpickle</span></code> instead. For example,
-a common instantiation with <code class="docutils literal"><span class="pre">multiprocessing</span></code> looks like this:</p>
+specify to serialize all methods with <code class="docutils literal"><span class="pre">dill</span></code> instead. For example, a common
+instantiation with <code class="docutils literal"><span class="pre">multiprocessing</span></code> looks like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">c</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span>
     <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
-    <span class="n">serializer</span><span class="o">=</span><span class="n">cloudpickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">,</span>
-    <span class="n">deserializer</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">,</span>
+    <span class="n">serializer</span><span class="o">=</span><span class="n">dill</span><span class="o">.</span><span class="n">dumps</span><span class="p">,</span>
+    <span class="n">deserializer</span><span class="o">=</span><span class="n">dill</span><span class="o">.</span><span class="n">loads</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 <p>This assumes that your data is serializable with <code class="docutils literal"><span class="pre">pickle</span></code> which is generally
-faster. You can also specify a custom serializer/deserializer for data.</p>
+faster than <code class="docutils literal"><span class="pre">dill</span></code>. You can also specify a custom serializer/deserializer
+for data.</p>
 <dl class="class">
 <dt id="pysparkling.Context">
 <em class="property">class </em><code class="descclassname">pysparkling.</code><code class="descname">Context</code><span class="sig-paren">(</span><em>pool=None</em>, <em>serializer=None</em>, <em>deserializer=None</em>, <em>data_serializer=None</em>, <em>data_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context" title="Permalink to this definition">¶</a></dt>
@@ -1319,44 +1184,6 @@ Can be <code class="docutils literal"><span class="pre">None</span></code>.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysparkling.Context.pickleFile">
-<code class="descname">pickleFile</code><span class="sig-paren">(</span><em>name</em>, <em>minPartitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.pickleFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.pickleFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a pickle file created with <code class="xref py py-func docutils literal"><span class="pre">RDD.saveAsPickleFile()</span></code>
-into an RDD.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> &#8211; Location of a file. Can include schemes like <code class="docutils literal"><span class="pre">http://</span></code>,
-<code class="docutils literal"><span class="pre">s3://</span></code> and <code class="docutils literal"><span class="pre">file://</span></code>, wildcard characters <code class="docutils literal"><span class="pre">?</span></code> and <code class="docutils literal"><span class="pre">*</span></code>
-and multiple expressions separated by <code class="docutils literal"><span class="pre">,</span></code>.</li>
-<li><strong>minPartitions</strong> &#8211; (optional)
-By default, every file is a partition, but this option allows to
-split these further.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New RDD.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<p>Example with a serialized list:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pickle</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysparkling</span> <span class="kn">import</span> <span class="n">Context</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">NamedTemporaryFile</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tmpFile</span> <span class="o">=</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tmpFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmpFile</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;world&#39;</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Context</span><span class="p">()</span><span class="o">.</span><span class="n">pickleFile</span><span class="p">(</span><span class="n">tmpFile</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-<span class="go">&#39;hello&#39;</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
 <dt id="pysparkling.Context.runJob">
 <code class="descname">runJob</code><span class="sig-paren">(</span><em>rdd</em>, <em>func</em>, <em>partitions=None</em>, <em>allowLocal=False</em>, <em>resultHandler=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.runJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.runJob" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is used by methods in the RDD.</p>
@@ -1398,8 +1225,7 @@ Process the result from the maps.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>filename</strong> &#8211; Location of a file. Can include schemes like <code class="docutils literal"><span class="pre">http://</span></code>,
-<code class="docutils literal"><span class="pre">s3://</span></code> and <code class="docutils literal"><span class="pre">file://</span></code>, wildcard characters <code class="docutils literal"><span class="pre">?</span></code> and <code class="docutils literal"><span class="pre">*</span></code>
-and multiple expressions separated by <code class="docutils literal"><span class="pre">,</span></code>.</li>
+<code class="docutils literal"><span class="pre">s3://</span></code> and <code class="docutils literal"><span class="pre">file://</span></code>.</li>
 <li><strong>minPartitions</strong> &#8211; (optional)
 By default, every file is a partition, but this option allows to
 split these further.</li>
@@ -1443,33 +1269,6 @@ Not used.</li>
 </table>
 </dd></dl>
 
-<dl class="method">
-<dt id="pysparkling.Context.wholeTextFiles">
-<code class="descname">wholeTextFiles</code><span class="sig-paren">(</span><em>path</em>, <em>minPartitions=None</em>, <em>use_unicode=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/context.html#Context.wholeTextFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.Context.wholeTextFiles" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read text files into an RDD of pairs of file name and file content.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>path</strong> &#8211; Location of the files. Can include schemes like <code class="docutils literal"><span class="pre">http://</span></code>,
-<code class="docutils literal"><span class="pre">s3://</span></code> and <code class="docutils literal"><span class="pre">file://</span></code>, wildcard characters <code class="docutils literal"><span class="pre">?</span></code> and <code class="docutils literal"><span class="pre">*</span></code>
-and multiple expressions separated by <code class="docutils literal"><span class="pre">,</span></code>.</li>
-<li><strong>minPartitions</strong> &#8211; (optional)
-By default, every file is a partition, but this option allows to
-split these further.</li>
-<li><strong>use_unicode</strong> &#8211; (optional)
-Not used.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New RDD.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1504,8 +1303,7 @@ for auth and use file paths of the form <code class="docutils literal"><span cla
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stream</strong> &#8211; A BytesIO instance. <code class="docutils literal"><span class="pre">bytes</span></code> are also possible and are converted
-to BytesIO.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stream</strong> &#8211; A BytesIO instance.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
 </tr>
@@ -1571,61 +1369,6 @@ datasets to the paths of the individual partitions
 <code class="docutils literal"><span class="pre">[my_data/part-00000,</span> <span class="pre">my_data/part-00001]</span></code>).</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list of file names.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pysparkling.fileio.TextFile">
-<em class="property">class </em><code class="descclassname">pysparkling.fileio.</code><code class="descname">TextFile</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/textfile.html#TextFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.TextFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Derived from <a class="reference internal" href="#pysparkling.fileio.File" title="pysparkling.fileio.File"><code class="xref py py-class docutils literal"><span class="pre">pysparkling.fileio.File</span></code></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> &#8211; Any text file name. Supports the schemes <code class="docutils literal"><span class="pre">http://</span></code>, <code class="docutils literal"><span class="pre">s3://</span></code> and
-<code class="docutils literal"><span class="pre">file://</span></code>.</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="pysparkling.fileio.TextFile.dump">
-<code class="descname">dump</code><span class="sig-paren">(</span><em>stream=None</em>, <em>encoding=u'utf8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/textfile.html#TextFile.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.TextFile.dump" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes a stream to a file.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>stream</strong> &#8211; An <code class="docutils literal"><span class="pre">io.StringIO</span></code> instance. A <code class="docutils literal"><span class="pre">basestring</span></code> is also possible and
-get converted to <code class="docutils literal"><span class="pre">io.StringIO</span></code>.</li>
-<li><strong>encoding</strong> &#8211; (optional)
-The character encoding of the file.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">self</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="pysparkling.fileio.TextFile.load">
-<code class="descname">load</code><span class="sig-paren">(</span><em>encoding=u'utf8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysparkling/fileio/textfile.html#TextFile.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysparkling.fileio.TextFile.load" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load the data from a file.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>encoding</strong> &#8211; (optional)
-The character encoding of the file.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An <code class="docutils literal"><span class="pre">io.StringIO</span></code> instance. Use <code class="docutils literal"><span class="pre">getvalue()</span></code> to get a string.</td>
 </tr>
 </tbody>
 </table>
